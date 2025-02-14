@@ -1,8 +1,9 @@
 package com.pujitha.playground;
 
+//implicitly always   abstract class 
 public interface InterfaceExample {
 
-	void eat();
+	void eat(); //Implicity it is always public abstract
 	
 }
 //InterfaceExample Equalivant to InterfaceExample1
@@ -55,8 +56,14 @@ class Dog extends Animal {
 		//super();
 	//}
 	
-	
 	//Overriding the default constructor
+	Dog(){
+			
+			
+	}
+	
+	// The below constructor overloading
+	//Overriding the default constructor with param
 	Dog(int age){
 		
 		this.age= age;
@@ -71,6 +78,7 @@ class Dog extends Animal {
 		System.out.print("tail tail" +age);
 	}
 	
+	
 	public void walkAndTalk() {
 		super.walking();
 		System.out.println("talking");
@@ -80,7 +88,7 @@ class Dog extends Animal {
 
 //Inheritance GermanShepard inherits Dog, Dog inherits Animal
 class GermanShepard extends  Dog {
-
+	
 	GermanShepard(int age) {
 		super(age);
 	}
@@ -90,18 +98,25 @@ class GermanShepard extends  Dog {
 
 
 //All class will by default extends Object
-class TestExample extends Object{
+class TestExample extends Object{ //any class by default implicitly extend Object class
+	
+	int i = 0; // container not object it is called primitive
 	
 	public static void main(String ...args) {
 		//Animal a = new Animal(); Abstract method can't be instantiated 
 		
 		//Dog d = new Dog(); // you shouldn't do this
 		//d.eat();
-		Animal d = new Dog(10); 
+		Animal d = new Dog();//Default constructor for Dog will work 
+		Animal de= new Dog(10); 
 		
 		GermanShepard c = new GermanShepard(10); 
 		c.sleep();//Inherits from Animal
 		c.walkAndTalk();//Inherits from Dog
+		
+		//Object inheritance check
+		TestExample  example = new TestExample();
+		//example.equals(example) //This equals comes from Object class by default
 	}
 	
 }
