@@ -11,7 +11,7 @@ public class AccessModifier {
 	//Encapsulation can be used to hide data members and data functions or methods
 	private int catAge= 0;
 	
-	int testAge = 0;
+	int testAge = 0; // if we don't put any modifier is called default. 
 	
 	public int getCatAge() {
 		return catAge;
@@ -23,14 +23,35 @@ public class AccessModifier {
 		}else {
 			throw new Exception("Exception");
 		}
-		
 	}
 
 	public void setTest(int test) {
 		this.test= test;
 		
 	}
+
+	protected int dogFood= 10;
 	
+	public int getTestAge() {
+		return testAge;
+	}
+
+	public void setTestAge(int testAge) {
+		this.testAge = testAge;
+	}
+
+	public int getDogFood() {
+		return dogFood;
+	}
+
+	public void setDogFood(int dogFood) throws Exception {
+		if(dogFood <=0 && dogFood >=100) {
+			this.dogFood = dogFood;
+		}else {
+			throw new Exception("Exception");
+		}
+	}
+
 	public int getTest() {
 		this.method1();//Only accessible within the class not outiside of the class
 		return test;
@@ -49,6 +70,8 @@ class TestExample1 { // class can be either public or default
 		aa.setCatAge(-3);//I will get an exception // we have to protect our data consider if someone put admin details as public
 		//aa.method1();// I can't access method1 as it is private
 		aa.testAge = 5;// Protected can be accessed within same package
+		aa.dogFood = 110;
+		System.out.println(aa.getDogFood()); // it print 110 which is wrong. Encapsulation always use private
 		
 	}
 }
