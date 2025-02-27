@@ -10,7 +10,7 @@ public final class Employee {
 	private String name;
 	private String age;
 	
-	 Employee(String name, String age){
+	Employee(String name, String age){
 		this.age = age;
 		this.name = name;
 	}
@@ -28,13 +28,13 @@ public final class Employee {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         Employee employee = (Employee) obj;
-        return name.equals(employee.name) &&
-                age.equals(employee.age);
+        return this.name.equals(employee.name) &&
+                this.age.equals(employee.age);
     }
 
     @Override
     public int hashCode() {
-        return this.name.hashCode() + this.age.hashCode() *13;
+        return this.name.hashCode() + this.age.hashCode() *13; // same number if you want the object to be same. 
     }
 	
 	public static void main(String[] args) {
@@ -48,11 +48,12 @@ public final class Employee {
 		String a = "Pujitha"; //compile will instantiate new String("Pujitha")
 		String b = "Pujitha";
 		String c = a;
+		String hry = "how are you"; // we are not using anywhere. Garbage collection 
 		System.out.println(i == j); //compare the value for primitve not object
 		System.out.println(j == k);
 		System.out.println(i == k);
 		
-		System.out.println(a == b);
+		System.out.println(a == b); //true because of String Pool
 		System.out.println(b == c);
 		System.out.println(c == a);
 		
@@ -65,8 +66,8 @@ public final class Employee {
 		System.out.println(c.hashCode());
 
 		System.out.println("Hashcode comparision"); 
-		System.out.println(e == d); //comparing the Object 
-		System.out.println(d.equals(e));
+		System.out.println(e == d); //comparing the Object  false because it is different memory location 
+		System.out.println(d.equals(e));// True because we did override
 		System.out.println(e.hashCode());
 		System.out.println(d.hashCode());
 		System.out.println(f.hashCode()); // Same hashcode of e that is called pass by reference
@@ -89,6 +90,11 @@ public final class Employee {
 		Map map2 = new HashMap();
 		map2.put(20, "a");
 		map2.put("a", "a");
+
+		StringBuilder sb= new StringBuilder();
+		sb.append("Hi");
+		sb.append("Pujitha"); // it always refer to same object unlike String
+		
 		
 	}
 }
