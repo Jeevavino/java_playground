@@ -12,10 +12,11 @@ class ExecTest {
 public class ExceptionTest {
 
 	public static void main(String[] args) throws IOException {
-		//throw new NullPointerException(); // NO Problem. because it is runtimeexcpetion. not forced
+		//throw new NullPointerException(); // NO Problem. because it is runtimeexcpetion. not forced to handle the Exception. 
 		//throw new IOException();//Checked exception . forced
 		ExecTest et = new ExecTest();
 		et.exe();
+		
 
 	}
 
