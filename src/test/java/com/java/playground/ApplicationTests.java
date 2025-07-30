@@ -1,4 +1,4 @@
-package com.pujitha.playground;
+package com.java.playground;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
