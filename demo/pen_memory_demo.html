@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pen Object - Heap and Stack Memory Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.4rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .control-group h3 {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        input, select {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .stack {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            min-height: 100px;
+            position: relative;
+        }
+
+        .stack h3 {
+            background: #ffc107;
+            color: #333;
+            padding: 10px;
+            margin: -2px -2px 10px -2px;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+        }
+
+        .stack-frame {
+            background: #fff;
+            border: 2px solid #007bff;
+            margin: 5px 10px;
+            padding: 12px;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+
+        .stack-frame.executing {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+        }
+
+        .heap {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 10px;
+            min-height: 100px;
+            position: relative;
+        }
+
+        .heap h3 {
+            background: #17a2b8;
+            color: white;
+            padding: 10px;
+            margin: -2px -2px 10px -2px;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+        }
+
+        .heap-object {
+            background: #fff;
+            border: 2px solid #28a745;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .heap-object h4 {
+            color: #28a745;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .attribute {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .attribute:last-child {
+            border-bottom: none;
+        }
+
+        .attribute .name {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .attribute .value {
+            color: #333;
+            font-family: monospace;
+        }
+
+        .console {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .console-line {
+            margin: 2px 0;
+            animation: typewriter 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes typewriter {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .method-signature {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-executing {
+            background: #28a745;
+            animation: pulse 1s infinite;
+        }
+
+        .status-waiting {
+            background: #ffc107;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Controls Section -->
+        <div class="section">
+            <h2>🎮 Controls</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <h3>Object Creation</h3>
+                    <button id="createPen">Create New Pen Object</button>
+                    <input type="number" id="inkLevel" placeholder="Ink Level (0-100)" value="50" min="0" max="100">
+                    <select id="inkColor">
+                        <option value="blue">Blue</option>
+                        <option value="red">Red</option>
+                        <option value="black">Black</option>
+                        <option value="green">Green</option>
+                    </select>
+                    <input type="text" id="tipType" placeholder="Tip Type" value="ballpoint">
+                    <input type="text" id="brand" placeholder="Brand" value="BIC">
+                </div>
+
+                <div class="control-group">
+                    <h3>Pen Actions</h3>
+                    <input type="text" id="writeMessage" placeholder="Message to write" value="Hello World">
+                    <button id="writeBtn" disabled>write(message)</button>
+                    <button id="checkInkBtn" disabled>checkInkLevel()</button>
+                    <button id="capOnBtn" disabled>capOn()</button>
+                    <button id="capOffBtn" disabled>capOff()</button>
+                    
+                    <select id="newColor">
+                        <option value="red">Red</option>
+                        <option value="blue">Blue</option>
+                        <option value="black">Black</option>
+                        <option value="green">Green</option>
+                        <option value="purple">Purple</option>
+                    </select>
+                    <button id="changeColorBtn" disabled>changeColor(newColor)</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>Memory Management</h3>
+                    <button id="clearStack">Clear Call Stack</button>
+                    <button id="resetDemo">Reset Demo</button>
+                </div>
+            </div>
+
+            <div class="console" id="console">
+                <div class="console-line">🖥️ Console Output:</div>
+                <div class="console-line">Ready to create Pen object...</div>
+            </div>
+        </div>
+
+        <!-- Call Stack Section -->
+        <div class="section">
+            <h2>📚 Call Stack (LIFO)</h2>
+            <div class="stack" id="callStack">
+                <h3>Call Stack - Method Calls</h3>
+                <div style="padding: 20px; text-align: center; color: #666; font-style: italic;">
+                    Stack is empty. Create a Pen object or call methods to see stack frames.
+                </div>
+            </div>
+        </div>
+
+        <!-- Heap Memory Section -->
+        <div class="section">
+            <h2>🏠 Heap Memory</h2>
+            <div class="heap" id="heapMemory">
+                <h3>Heap - Object Storage</h3>
+                <div style="padding: 20px; text-align: center; color: #666; font-style: italic;">
+                    No objects created yet. Click "Create New Pen Object" to allocate memory on the heap.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pen class implementation in JavaScript
+        class Pen {
+            constructor(inkLevel, inkColor, tipType, brand) {
+                this.inkLevel = inkLevel;
+                this.inkColor = inkColor;
+                this.tipType = tipType;
+                this.brand = brand;
+                this.isCapped = true;
+                this.address = Math.floor(Math.random() * 1000000).toString(16).toUpperCase();
+                
+                addToConsole(`[A new '${this.brand}' Pen object has been created on the HEAP at address 0x${this.address}]`);
+                updateHeapDisplay();
+            }
+
+            write(message) {
+                addStackFrame(`write("${message}")`, 'pen.write()');
+                
+                if (this.isCapped) {
+                    addToConsole("Can't write. The cap is on!");
+                    setTimeout(() => removeStackFrame(), 5000);
+                    return;
+                }
+                
+                if (this.inkLevel <= 0) {
+                    addToConsole("Can't write. The pen is out of ink!");
+                    setTimeout(() => removeStackFrame(), 5000);
+                    return;
+                }
+                
+                addToConsole(`Writing: '${message}' with the ${this.inkColor} pen.`);
+                this.inkLevel -= message.length;
+                if (this.inkLevel < 0) this.inkLevel = 0;
+                
+                updateHeapDisplay();
+                setTimeout(() => removeStackFrame(), 5000);
+            }
+
+            checkInkLevel() {
+                addStackFrame('checkInkLevel()', 'pen.checkInkLevel()');
+                addToConsole(`Ink level is now: ${this.inkLevel}%`);
+                setTimeout(() => removeStackFrame(), 5000);
+            }
+
+            changeColor(newColor) {
+                addStackFrame(`changeColor("${newColor}")`, 'pen.changeColor()');
+                addToConsole(`Changing color from ${this.inkColor} to ${newColor}.`);
+                this.inkColor = newColor;
+                updateHeapDisplay();
+                setTimeout(() => removeStackFrame(), 5000);
+            }
+
+            capOn() {
+                addStackFrame('capOn()', 'pen.capOn()');
+                addToConsole("Click! Capping the pen.");
+                this.isCapped = true;
+                updateHeapDisplay();
+                setTimeout(() => removeStackFrame(), 5000);
+            }
+
+            capOff() {
+                addStackFrame('capOff()', 'pen.capOff()');
+                addToConsole("Click! Uncapping the pen.");
+                this.isCapped = false;
+                updateHeapDisplay();
+                setTimeout(() => removeStackFrame(), 5000);
+            }
+        }
+
+        // Global variables
+        let currentPen = null;
+        let stackFrames = [];
+
+        // DOM elements
+        const createPenBtn = document.getElementById('createPen');
+        const writeBtn = document.getElementById('writeBtn');
+        const checkInkBtn = document.getElementById('checkInkBtn');
+        const capOnBtn = document.getElementById('capOnBtn');
+        const capOffBtn = document.getElementById('capOffBtn');
+        const changeColorBtn = document.getElementById('changeColorBtn');
+        const clearStackBtn = document.getElementById('clearStack');
+        const resetBtn = document.getElementById('resetDemo');
+        const console = document.getElementById('console');
+        const callStack = document.getElementById('callStack');
+        const heapMemory = document.getElementById('heapMemory');
+
+        // Event listeners
+        createPenBtn.addEventListener('click', createPenObject);
+        writeBtn.addEventListener('click', () => currentPen.write(document.getElementById('writeMessage').value));
+        checkInkBtn.addEventListener('click', () => currentPen.checkInkLevel());
+        capOnBtn.addEventListener('click', () => currentPen.capOn());
+        capOffBtn.addEventListener('click', () => currentPen.capOff());
+        changeColorBtn.addEventListener('click', () => currentPen.changeColor(document.getElementById('newColor').value));
+        clearStackBtn.addEventListener('click', clearCallStack);
+        resetBtn.addEventListener('click', resetDemo);
+
+        function createPenObject() {
+            addStackFrame('new Pen(inkLevel, inkColor, tipType, brand)', 'Pen constructor');
+            
+            const inkLevel = parseInt(document.getElementById('inkLevel').value) || 50;
+            const inkColor = document.getElementById('inkColor').value;
+            const tipType = document.getElementById('tipType').value || 'ballpoint';
+            const brand = document.getElementById('brand').value || 'BIC';
+            
+            currentPen = new Pen(inkLevel, inkColor, tipType, brand);
+            
+            // Enable buttons
+            writeBtn.disabled = false;
+            checkInkBtn.disabled = false;
+            capOnBtn.disabled = false;
+            capOffBtn.disabled = false;
+            changeColorBtn.disabled = false;
+            
+            setTimeout(() => removeStackFrame(), 2000);
+        }
+
+        function addStackFrame(methodCall, signature) {
+            const frame = {
+                id: Date.now(),
+                methodCall: methodCall,
+                signature: signature,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            stackFrames.push(frame);
+            updateStackDisplay();
+        }
+
+        function removeStackFrame() {
+            if (stackFrames.length > 0) {
+                stackFrames.pop();
+                updateStackDisplay();
+            }
+        }
+
+        function updateStackDisplay() {
+            if (stackFrames.length === 0) {
+                callStack.innerHTML = `
+                    <h3>Call Stack - Method Calls</h3>
+                    <div style="padding: 20px; text-align: center; color: #666; font-style: italic;">
+                        Stack is empty. Create a Pen object or call methods to see stack frames.
+                    </div>
+                `;
+                return;
+            }
+
+            let stackHTML = '<h3>Call Stack - Method Calls</h3>';
+            
+            // Display stack frames in LIFO order (last added on top)
+            for (let i = stackFrames.length - 1; i >= 0; i--) {
+                const frame = stackFrames[i];
+                const isExecuting = i === stackFrames.length - 1;
+                
+                stackHTML += `
+                    <div class="stack-frame ${isExecuting ? 'executing' : ''}">
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <span class="status-indicator ${isExecuting ? 'status-executing' : 'status-waiting'}"></span>
+                            <strong>${frame.signature}</strong>
+                        </div>
+                        <div class="method-signature">${frame.methodCall}</div>
+                        <div style="font-size: 0.7rem; color: #888; margin-top: 5px;">
+                            ${isExecuting ? '🔄 Executing' : '⏳ Waiting'} | ${frame.timestamp}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            callStack.innerHTML = stackHTML;
+        }
+
+        function updateHeapDisplay() {
+            if (!currentPen) {
+                heapMemory.innerHTML = `
+                    <h3>Heap - Object Storage</h3>
+                    <div style="padding: 20px; text-align: center; color: #666; font-style: italic;">
+                        No objects created yet. Click "Create New Pen Object" to allocate memory on the heap.
+                    </div>
+                `;
+                return;
+            }
+
+            const heapHTML = `
+                <h3>Heap - Object Storage</h3>
+                <div class="heap-object">
+                    <h4>📝 Pen Object @ 0x${currentPen.address}</h4>
+                    <div class="attribute">
+                        <span class="name">inkLevel:</span>
+                        <span class="value">${currentPen.inkLevel}</span>
+                    </div>
+                    <div class="attribute">
+                        <span class="name">inkColor:</span>
+                        <span class="value">"${currentPen.inkColor}"</span>
+                    </div>
+                    <div class="attribute">
+                        <span class="name">tipType:</span>
+                        <span class="value">"${currentPen.tipType}"</span>
+                    </div>
+                    <div class="attribute">
+                        <span class="name">brand:</span>
+                        <span class="value">"${currentPen.brand}"</span>
+                    </div>
+                    <div class="attribute">
+                        <span class="name">isCapped:</span>
+                        <span class="value">${currentPen.isCapped}</span>
+                    </div>
+                </div>
+            `;
+            
+            heapMemory.innerHTML = heapHTML;
+        }
+
+        function addToConsole(message) {
+            const consoleLine = document.createElement('div');
+            consoleLine.className = 'console-line';
+            consoleLine.textContent = `> ${message}`;
+            console.appendChild(consoleLine);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function clearCallStack() {
+            stackFrames = [];
+            updateStackDisplay();
+            addToConsole('Call stack cleared.');
+        }
+
+        function resetDemo() {
+            currentPen = null;
+            stackFrames = [];
+            
+            // Disable buttons
+            writeBtn.disabled = true;
+            checkInkBtn.disabled = true;
+            capOnBtn.disabled = true;
+            capOffBtn.disabled = true;
+            changeColorBtn.disabled = true;
+            
+            // Clear displays
+            updateStackDisplay();
+            updateHeapDisplay();
+            
+            // Reset console
+            console.innerHTML = `
+                <div class="console-line">🖥️ Console Output:</div>
+                <div class="console-line">Demo reset. Ready to create Pen object...</div>
+            `;
+        }
+    </script>
+</body>
+</html>

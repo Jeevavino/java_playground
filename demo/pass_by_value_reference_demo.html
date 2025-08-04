@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Pass by Value vs Reference Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .demo-section {
+            padding: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .demo-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .memory-visualization {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .memory-area {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .memory-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .stack-memory .memory-title {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .heap-memory .memory-title {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .variable {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .variable.highlight {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            transform: scale(1.02);
+        }
+
+        .variable-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .variable-value {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .object {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .object-title {
+            font-weight: bold;
+            color: #7b1fa2;
+            margin-bottom: 10px;
+        }
+
+        .object-property {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .output-area {
+            background: #1e1e1e;
+            color: #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #333;
+        }
+
+        .output-line {
+            margin-bottom: 5px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            font-weight: bold;
+            min-width: 100px;
+        }
+
+        .input-group input {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .explanation {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .explanation h4 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .memory-visualization {
+                grid-template-columns: 1fr;
+            }
+            
+            .demo-controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Java Pass by Value vs Reference</h1>
+            <p>Interactive demonstration of how Java handles method parameters</p>
+        </div>
+
+        <!-- Pass by Value Demo -->
+        <div class="demo-section">
+            <h2 class="section-title">Pass by Value (Primitives)</h2>
+            
+            <div class="input-group">
+                <label>Original Value:</label>
+                <input type="number" id="primitiveInput" value="42" min="0" max="1000">
+            </div>
+
+            <div class="demo-controls">
+                <button class="btn" onclick="demonstratePassByValue()">Call tryToChangeInt()</button>
+                <button class="btn" onclick="clearPrimitiveOutput()">Clear Output</button>
+            </div>
+
+            <div class="memory-visualization">
+                <div class="memory-area stack-memory">
+                    <div class="memory-title">Stack Memory</div>
+                    <div class="variable" id="mainInt">
+                        <div class="variable-name">main() - originalNumber</div>
+                        <div class="variable-value" id="mainIntValue">42</div>
+                    </div>
+                    <div class="variable" id="methodInt" style="display: none;">
+                        <div class="variable-name">tryToChangeInt() - number</div>
+                        <div class="variable-value" id="methodIntValue">42</div>
+                    </div>
+                </div>
+                <div class="memory-area">
+                    <div class="output-area" id="primitiveOutput">
+                        <div class="output-line">Ready to demonstrate pass by value...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <h4>What's happening:</h4>
+                <p>When you pass a primitive to a method, Java creates a <strong>copy</strong> of the value on the method's stack frame. Changes to this copy don't affect the original variable.</p>
+            </div>
+        </div>
+
+        <!-- Pass by Reference Demo -->
+        <div class="demo-section">
+            <h2 class="section-title">Pass by Reference (Objects)</h2>
+            
+            <div class="input-group">
+                <label>Ink Level:</label>
+                <input type="number" id="inkInput" value="100" min="0" max="100">
+            </div>
+            <div class="input-group">
+                <label>Color:</label>
+                <input type="text" id="colorInput" value="green">
+            </div>
+
+            <div class="demo-controls">
+                <button class="btn" onclick="demonstratePassByReference()">Call modifyPenState()</button>
+                <button class="btn" onclick="resetPen()">Reset Pen</button>
+                <button class="btn" onclick="clearObjectOutput()">Clear Output</button>
+            </div>
+
+            <div class="memory-visualization">
+                <div class="memory-area stack-memory">
+                    <div class="memory-title">Stack Memory (References)</div>
+                    <div class="variable" id="mainPenRef">
+                        <div class="variable-name">main() - testPen</div>
+                        <div class="variable-value">@1A2B3C (reference)</div>
+                    </div>
+                    <div class="variable" id="methodPenRef" style="display: none;">
+                        <div class="variable-name">modifyPenState() - pen</div>
+                        <div class="variable-value">@1A2B3C (copy of reference)</div>
+                    </div>
+                </div>
+                <div class="memory-area heap-memory">
+                    <div class="memory-title">Heap Memory (Objects)</div>
+                    <div class="object" id="penObject">
+                        <div class="object-title">Pen Object @1A2B3C</div>
+                        <div class="object-property">
+                            <span>inkLevel:</span>
+                            <span id="penInkLevel">100</span>
+                        </div>
+                        <div class="object-property">
+                            <span>color:</span>
+                            <span id="penColor">"green"</span>
+                        </div>
+                        <div class="object-property">
+                            <span>type:</span>
+                            <span>"ballpoint"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="output-area" id="objectOutput">
+                <div class="output-line">Ready to demonstrate pass by reference...</div>
+            </div>
+
+            <div class="explanation">
+                <h4>What's happening:</h4>
+                <p>When you pass an object to a method, Java creates a <strong>copy of the reference</strong>, not the object itself. Both references point to the same object in heap memory, so modifications affect the original object.</p>
+            </div>
+        </div>
+
+        <!-- String Immutability Demo -->
+        <div class="demo-section">
+            <h2 class="section-title">String Immutability</h2>
+            
+            <div class="input-group">
+                <label>Original Text:</label>
+                <input type="text" id="stringInput" value="Hello">
+            </div>
+
+            <div class="demo-controls">
+                <button class="btn" onclick="demonstrateStringImmutability()">Call tryToModifyString()</button>
+                <button class="btn" onclick="clearStringOutput()">Clear Output</button>
+            </div>
+
+            <div class="memory-visualization">
+                <div class="memory-area stack-memory">
+                    <div class="memory-title">Stack Memory (References)</div>
+                    <div class="variable" id="mainStringRef">
+                        <div class="variable-name">main() - originalText</div>
+                        <div class="variable-value" id="mainStringRefValue">@STR001 (reference)</div>
+                    </div>
+                    <div class="variable" id="methodStringRef" style="display: none;">
+                        <div class="variable-name">tryToModifyString() - text</div>
+                        <div class="variable-value" id="methodStringRefValue">@STR001 → @STR002</div>
+                    </div>
+                </div>
+                <div class="memory-area heap-memory">
+                    <div class="memory-title">Heap Memory (String Objects)</div>
+                    <div class="object" id="originalStringObject">
+                        <div class="object-title">String @STR001</div>
+                        <div class="object-property">
+                            <span>value:</span>
+                            <span id="originalStringValue">"Hello"</span>
+                        </div>
+                    </div>
+                    <div class="object" id="newStringObject" style="display: none;">
+                        <div class="object-title">String @STR002</div>
+                        <div class="object-property">
+                            <span>value:</span>
+                            <span id="newStringValue">"Hello MODIFIED"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="output-area" id="stringOutput">
+                <div class="output-line">Ready to demonstrate string immutability...</div>
+            </div>
+
+            <div class="explanation">
+                <h4>What's happening:</h4>
+                <p>Strings are objects but they're <strong>immutable</strong>. When you try to modify a string, Java creates a new String object. The original string remains unchanged, so it appears like pass by value.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let outputLines = [];
+
+        function addOutput(elementId, message, delay = 0) {
+            setTimeout(() => {
+                const output = document.getElementById(elementId);
+                const line = document.createElement('div');
+                line.className = 'output-line';
+                line.textContent = message;
+                output.appendChild(line);
+                output.scrollTop = output.scrollHeight;
+            }, delay);
+        }
+
+        function clearOutput(elementId) {
+            document.getElementById(elementId).innerHTML = '<div class="output-line">Output cleared...</div>';
+        }
+
+        function highlightVariable(elementId, duration = 2000) {
+            const element = document.getElementById(elementId);
+            element.classList.add('highlight');
+            setTimeout(() => {
+                element.classList.remove('highlight');
+            }, duration);
+        }
+
+        function demonstratePassByValue() {
+            const originalValue = parseInt(document.getElementById('primitiveInput').value);
+            const methodInt = document.getElementById('methodInt');
+            
+            // Clear previous output
+            clearOutput('primitiveOutput');
+            
+            // Update main variable
+            document.getElementById('mainIntValue').textContent = originalValue;
+            highlightVariable('mainInt');
+            
+            addOutput('primitiveOutput', `main() - originalNumber = ${originalValue}`, 0);
+            addOutput('primitiveOutput', 'Calling tryToChangeInt(' + originalValue + ')...', 500);
+            
+            // Show method parameter
+            setTimeout(() => {
+                methodInt.style.display = 'block';
+                document.getElementById('methodIntValue').textContent = originalValue;
+                highlightVariable('methodInt');
+                addOutput('primitiveOutput', `  Inside method - received: ${originalValue}`, 0);
+            }, 1000);
+            
+            // Modify method parameter
+            setTimeout(() => {
+                document.getElementById('methodIntValue').textContent = '999';
+                highlightVariable('methodInt');
+                addOutput('primitiveOutput', '  Inside method - changed to: 999', 0);
+            }, 2000);
+            
+            // Method ends, show original unchanged
+            setTimeout(() => {
+                methodInt.style.display = 'none';
+                highlightVariable('mainInt');
+                addOutput('primitiveOutput', 'Method ended - parameter destroyed', 0);
+                addOutput('primitiveOutput', `main() - originalNumber still = ${originalValue}`, 200);
+                addOutput('primitiveOutput', '✓ Original value UNCHANGED! (Pass by Value)', 400);
+            }, 3500);
+        }
+
+        function demonstratePassByReference() {
+            const inkLevel = parseInt(document.getElementById('inkInput').value);
+            const color = document.getElementById('colorInput').value;
+            const methodPenRef = document.getElementById('methodPenRef');
+            
+            // Clear previous output
+            clearOutput('objectOutput');
+            
+            // Update pen object
+            document.getElementById('penInkLevel').textContent = inkLevel;
+            document.getElementById('penColor').textContent = `"${color}"`;
+            
+            highlightVariable('mainPenRef');
+            addOutput('objectOutput', `main() - testPen = new Pen(${inkLevel}, "${color}", "ballpoint")`, 0);
+            addOutput('objectOutput', 'Calling modifyPenState(testPen)...', 500);
+            
+            // Show method parameter (reference copy)
+            setTimeout(() => {
+                methodPenRef.style.display = 'block';
+                highlightVariable('methodPenRef');
+                addOutput('objectOutput', `  Inside method - received pen reference copy`, 0);
+                addOutput('objectOutput', `  Both references point to SAME object`, 200);
+            }, 1000);
+            
+            // Modify object through reference
+            setTimeout(() => {
+                document.getElementById('penInkLevel').textContent = '25';
+                document.getElementById('penColor').textContent = '"purple"';
+                highlightVariable('penObject');
+                addOutput('objectOutput', '  pen.setInkLevel(25) - modifying heap object', 0);
+                addOutput('objectOutput', '  pen.changeColor("purple") - modifying heap object', 200);
+            }, 2500);
+            
+            // Method ends
+            setTimeout(() => {
+                methodPenRef.style.display = 'none';
+                highlightVariable('mainPenRef');
+                highlightVariable('penObject');
+                addOutput('objectOutput', 'Method ended - reference copy destroyed', 0);
+                addOutput('objectOutput', 'main() - testPen object IS MODIFIED!', 200);
+                addOutput('objectOutput', '✓ Object state CHANGED! (Pass by Reference)', 400);
+            }, 4000);
+        }
+
+        function demonstrateStringImmutability() {
+            const originalText = document.getElementById('stringInput').value;
+            const methodStringRef = document.getElementById('methodStringRef');
+            const newStringObject = document.getElementById('newStringObject');
+            
+            // Clear previous output
+            clearOutput('stringOutput');
+            
+            // Update original string
+            document.getElementById('originalStringValue').textContent = `"${originalText}"`;
+            document.getElementById('newStringValue').textContent = `"${originalText} MODIFIED"`;
+            
+            highlightVariable('mainStringRef');
+            addOutput('stringOutput', `main() - originalText = "${originalText}"`, 0);
+            addOutput('stringOutput', 'Calling tryToModifyString(originalText)...', 500);
+            
+            // Show method parameter
+            setTimeout(() => {
+                methodStringRef.style.display = 'block';
+                document.getElementById('methodStringRefValue').textContent = '@STR001 (reference copy)';
+                highlightVariable('methodStringRef');
+                addOutput('stringOutput', `  Inside method - received: "${originalText}"`, 0);
+            }, 1000);
+            
+            // Show string "modification" (new object creation)
+            setTimeout(() => {
+                newStringObject.style.display = 'block';
+                document.getElementById('methodStringRefValue').textContent = '@STR001 → @STR002';
+                highlightVariable('methodStringRef');
+                highlightVariable('newStringObject');
+                addOutput('stringOutput', `  text = text + " MODIFIED"`, 0);
+                addOutput('stringOutput', `  Creates NEW String object @STR002`, 200);
+                addOutput('stringOutput', `  Inside method - changed to: "${originalText} MODIFIED"`, 400);
+            }, 2500);
+            
+            // Method ends
+            setTimeout(() => {
+                methodStringRef.style.display = 'none';
+                newStringObject.style.display = 'none';
+                highlightVariable('mainStringRef');
+                highlightVariable('originalStringObject');
+                addOutput('stringOutput', 'Method ended - reference copy destroyed', 0);
+                addOutput('stringOutput', `main() - originalText still = "${originalText}"`, 200);
+                addOutput('stringOutput', '✓ Original String UNCHANGED! (Immutability)', 400);
+            }, 4000);
+        }
+
+        function resetPen() {
+            document.getElementById('inkInput').value = '100';
+            document.getElementById('colorInput').value = 'green';
+            document.getElementById('penInkLevel').textContent = '100';
+            document.getElementById('penColor').textContent = '"green"';
+            clearOutput('objectOutput');
+        }
+
+        function clearPrimitiveOutput() {
+            clearOutput('primitiveOutput');
+            document.getElementById('methodInt').style.display = 'none';
+        }
+
+        function clearObjectOutput() {
+            clearOutput('objectOutput');
+            document.getElementById('methodPenRef').style.display = 'none';
+        }
+
+        function clearStringOutput() {
+            clearOutput('stringOutput');
+            document.getElementById('methodStringRef').style.display = 'none';
+            document.getElementById('newStringObject').style.display = 'none';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial values
+            const initialInt = document.getElementById('primitiveInput').value;
+            document.getElementById('mainIntValue').textContent = initialInt;
+        });
+    </script>
+</body>
+</html>

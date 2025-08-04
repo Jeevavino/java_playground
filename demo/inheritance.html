@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizing Java OOP Concepts</title>
+    <style>
+        /* General Body Styling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+        }
+
+        /* Card Styling for Concepts */
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            padding: 25px;
+            border-left: 5px solid #3498db;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #3498db;
+            font-size: 1.8em;
+        }
+
+        /* Specific Card Border Colors */
+        .card.inheritance { border-color: #2ecc71; }
+        .card.inheritance h2 { color: #2ecc71; }
+        .card.polymorphism { border-color: #e67e22; }
+        .card.polymorphism h2 { color: #e67e22; }
+        .card.diamond { border-color: #9b59b6; }
+        .card.diamond h2 { color: #9b59b6; }
+
+
+        /* Code Block Styling */
+        pre {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: "Fira Code", "Courier New", monospace;
+            font-size: 0.9em;
+        }
+        
+        code {
+             font-family: "Fira Code", "Courier New", monospace;
+        }
+
+        /* Highlighting keywords in text */
+        strong {
+            color: #2980b9;
+        }
+        
+        .keyword {
+            color: #c792ea; /* Purple for keywords */
+        }
+        .type {
+            color: #82aaff; /* Blue for types */
+        }
+        .comment {
+            color: #637777; /* Grey for comments */
+        }
+        .string {
+            color: #c3e88d; /* Green for strings */
+        }
+        
+        /* Simple diagram styling */
+        .diagram {
+            text-align: center;
+            padding: 20px;
+            font-family: monospace;
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+        .arrow {
+            color: #e67e22;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Visualizing Core Java OOP Concepts 🐘</h1>
+            <p>A breakdown of the key ideas from the Animal Kingdom program.</p>
+        </header>
+
+        <section class="card">
+            <h2>1. Abstract Class: The Blueprint 📜</h2>
+            <p>
+                An <strong>abstract class</strong> is a template that cannot be instantiated on its own. It defines common properties and behaviors for a group of related subclasses.
+            </p>
+            <ul>
+                <li>It can have regular methods with implementations (like <code>eat()</code>).</li>
+                <li>It can have <strong>abstract methods</strong> (like <code>makeSound()</code>) which have no body. Subclasses <strong>must</strong> provide an implementation for these methods.</li>
+            </ul>
+            <pre><code><span class="keyword">public abstract class</span> <span class="type">Animal</span> {
+    <span class="keyword">protected</span> <span class="type">String</span> name;
+    <span class="keyword">protected int</span> age;
+
+    <span class="comment">// Abstract methods - a promise that subclasses will implement this</span>
+    <span class="keyword">public abstract void</span> makeSound();
+    <span class="keyword">public abstract void</span> move();
+
+    <span class="comment">// Regular method - shared by all subclasses</span>
+    <span class="keyword">public void</span> eat() {
+        System.out.println(name + <span class="string">" is eating"</span>);
+    }
+}</code></pre>
+        </section>
+
+        <section class="card inheritance">
+            <h2 class="inheritance">2. Inheritance & Interfaces: Specializing & Adding Abilities 🕊️🐠🦆</h2>
+            <p>
+                <strong>Inheritance</strong> (<code>extends</code>) allows a class to acquire the properties and methods of another class. This promotes code reuse.
+            </p>
+            <p>
+                <strong>Interfaces</strong> (<code>implements</code>) define a contract of abilities a class can have, without specifying how. A class can implement <strong>multiple</strong> interfaces, allowing for flexible designs (like a <code>Duck</code> that can both <code>Flyable</code> and <code>Swimmable</code>).
+            </p>
+            <pre><code><span class="comment">// Duck inherits from Animal AND implements two interfaces</span>
+<span class="keyword">class</span> <span class="type">Duck</span> <span class="keyword">extends</span> <span class="type">Animal</span> <span class="keyword">implements</span> <span class="type">Flyable</span>, <span class="type">Swimmable</span> {
+    
+    <span class="comment">// Must implement abstract methods from Animal</span>
+    @Override
+    <span class="keyword">public void</span> makeSound() { System.out.println(<span class="string">"Quacks"</span>); }
+    
+    @Override
+    <span class="keyword">public void</span> move() { System.out.println(<span class="string">"Waddles"</span>); }
+
+    <span class="comment">// Must implement methods from interfaces</span>
+    @Override
+    <span class="keyword">public void</span> fly() { System.out.println(<span class="string">"Flies over water"</span>); }
+
+    @Override
+    <span class="keyword">public void</span> swim() { System.out.println(<span class="string">"Paddles on water"</span>); }
+}</code></pre>
+        </section>
+
+        <section class="card polymorphism">
+            <h2>3. Polymorphism: The Superpower 🎭</h2>
+            <p>
+                <strong>Polymorphism</strong> (from Greek, meaning "many forms") is the ability to treat an object of a specific class as an object of its parent class. This allows you to write flexible, scalable code that doesn't need to know the exact type of object it's working with.
+            </p>
+            <h4>Key Benefit: Write Generic Code</h4>
+            <p>
+                The <code>ZooKeeper</code> can work with <strong>any</strong> <code>Animal</code>. You can add a new <code>Lion</code> class tomorrow, and the <code>feedAllAnimals</code> method will work without any changes!
+            </p>
+            <pre><code><span class="keyword">class</span> <span class="type">ZooKeeper</span> {
+    <span class="comment">// This one method works for Birds, Fish, Cats... anything that IS-A Animal!</span>
+    <span class="keyword">public void</span> feedAllAnimals(<span class="type">Animal</span>[] animals) {
+        <span class="keyword">for</span> (<span class="type">Animal</span> animal : animals) {
+            <span class="comment">// The correct eat() method is called automatically!</span>
+            animal.eat(); 
+        }
+    }
+}</code></pre>
+            <div class="diagram">
+                <div>ZooKeeper</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;|</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;V</div>
+                <div>feedAllAnimals( <span class="arrow">[</span> <span class="type">Bird</span>, <span class="type">Fish</span>, <span class="type">Duck</span>, <span class="type">Cat</span> <span class="arrow">]</span> )</div>
+            </div>
+            <p>When <code>animal.eat()</code> is called, Java looks at the <strong>actual object</strong> (e.g., a <code>Bird</code> object) at runtime and calls its specific <code>eat()</code> method, not the generic one from <code>Animal</code>. This is called <strong>dynamic method dispatch</strong>.</p>
+        </section>
+
+        <section class="card diamond">
+            <h2>4. Why Not Multiple Inheritance? The Diamond Problem 💎</h2>
+            <p>
+                Java intentionally does <strong>not</strong> allow a class to <code>extend</code> multiple other classes. This is to avoid the "Diamond Problem," an ambiguity that arises when a class inherits conflicting methods from two separate parent classes.
+            </p>
+            <p>Imagine if a class <code>D</code> could extend both <code>B</code> and <code>C</code>. If both <code>B</code> and <code>C</code> have their own version of <code>method()</code>, which one should <code>D</code> inherit? It's impossible to know.</p>
+            <div class="diagram">
+                <div>Class A { method() }</div>
+                <div>&nbsp;&nbsp;/ &nbsp; \</div>
+                <div>&nbsp;/ &nbsp; &nbsp; \</div>
+                <div>Class B &nbsp; &nbsp; Class C</div>
+                <div>{ method() } &nbsp; { method() }</div>
+                <div>&nbsp;\ &nbsp; &nbsp; /</div>
+                <div>&nbsp;&nbsp;\ &nbsp; /</div>
+                <div>&nbsp;&nbsp;&nbsp;Class D</div>
+                <div>&nbsp;&nbsp;&nbsp;{ ??? } <span class="arrow">&lt;-- AMBIGUITY!</span></div>
+            </div>
+            <p>
+                <strong>Solution:</strong> Java solves this by allowing a class to <code>extend</code> only one class but <code>implement</code> multiple <strong>interfaces</strong>. Since interfaces (traditionally) only declare method signatures without implementation, there is no conflict to inherit.
+            </p>
+        </section>
+    </div>
+
+</body>
+</html>

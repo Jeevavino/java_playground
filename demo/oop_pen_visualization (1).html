@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OOP Concepts - Pen Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .concept-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .concept-panel h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .memory-visualization {
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .memory-visualization::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .memory-title {
+            color: #ecf0f1;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .pen-object {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 2px solid #ecf0f1;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .pen-object:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        .pen-object.selected {
+            border-color: #f39c12;
+            box-shadow: 0 0 20px rgba(243, 156, 18, 0.6);
+            transform: scale(1.02);
+        }
+
+        .pen-object.removing {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                transform: scale(1) rotateZ(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8) rotateZ(360deg);
+            }
+        }
+
+        .pen-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .pen-body {
+            width: 200px;
+            height: 12px;
+            background: var(--pen-color, #3498db);
+            border-radius: 6px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pen-tip {
+            width: 20px;
+            height: 8px;
+            background: #2c3e50;
+            border-radius: 0 4px 4px 0;
+            position: absolute;
+            right: -20px;
+            top: 2px;
+        }
+
+        .pen-cap {
+            width: 30px;
+            height: 16px;
+            background: #34495e;
+            border-radius: 8px 0 0 8px;
+            position: absolute;
+            left: -30px;
+            top: -2px;
+            transition: all 0.3s ease;
+        }
+
+        .pen-cap.off {
+            left: -50px;
+            opacity: 0.5;
+        }
+
+        .attributes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .attribute {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .attribute:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(145deg, #27ae60, #219a52);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(145deg, #f39c12, #d68910);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .console {
+            background: #1e1e1e;
+            color: #00ff41;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border: 2px solid #333;
+        }
+
+        .console-line {
+            margin-bottom: 5px;
+            padding: 2px 0;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .concept-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .concept-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .concept-list li::before {
+            content: '▶';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .concept-list li:last-child {
+            border-bottom: none;
+        }
+
+        .ink-meter {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .ink-level {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: white;
+        }
+
+        .color-option.selected {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖊️ Object-Oriented Programming Concepts</h1>
+        
+        <div class="main-content">
+            <div class="concept-panel">
+                <h2>🎯 OOP Principles</h2>
+                <ul class="concept-list">
+                    <li><strong>Class:</strong> Blueprint for creating objects (Pen template)</li>
+                    <li><strong>Object:</strong> Instance of a class (Your actual pen)</li>
+                    <li><strong>Encapsulation:</strong> Data & methods bundled together</li>
+                    <li><strong>Abstraction:</strong> Hide complexity, show simple interface</li>
+                    <li><strong>Data Hiding:</strong> Control access to object's internal state</li>
+                </ul>
+
+                <h2 style="margin-top: 30px;">🎨 Color Options</h2>
+                <div class="color-picker">
+                    <div class="color-option selected" style="background: #3498db;" data-color="blue" title="Blue"></div>
+                    <div class="color-option" style="background: #e74c3c;" data-color="red" title="Red"></div>
+                    <div class="color-option" style="background: #27ae60;" data-color="green" title="Green"></div>
+                    <div class="color-option" style="background: #f39c12;" data-color="orange" title="Orange"></div>
+                    <div class="color-option" style="background: #9b59b6;" data-color="purple" title="Purple"></div>
+                    <div class="color-option" style="background: #1abc9c;" data-color="teal" title="Teal"></div>
+                </div>
+            </div>
+
+            <div class="memory-visualization">
+                <h3 class="memory-title">🧠 HEAP Memory - Object Storage</h3>
+                <div id="pen-container">
+                    <!-- Pen objects will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" onclick="createPen()">🆕 Create New Pen</button>
+            <button class="btn-success" onclick="uncapPen()">✂️ Remove Cap</button>
+            <button class="btn-warning" onclick="capPen()">🔒 Put Cap On</button>
+            <button class="btn-primary" onclick="writeSomething()">✍️ Write Message</button>
+            <button class="btn-success" onclick="checkInk()">🔍 Check Ink Level</button>
+            <button class="btn-warning" onclick="changeColor()">🎨 Change Color</button>
+            <button class="btn-danger" onclick="removePen()">🗑️ Remove Pen</button>
+            <button class="btn-danger" onclick="clearConsole()">🧹 Clear Console</button>
+        </div>
+
+            <div class="console" id="console">
+            <div class="console-line">💡 Welcome to OOP Pen Simulator!</div>
+            <div class="console-line">🎯 Click "Create New Pen" to start exploring object-oriented concepts.</div>
+            <div class="console-line">✨ Click on any pen to select it as the active pen.</div>
+            <div class="console-line">🗑️ Use "Remove Pen" to demonstrate object destruction and garbage collection.</div>
+        </div>
+    </div>
+
+    <script>
+        let penCount = 0;
+        let currentPen = null;
+        let selectedColor = 'blue';
+        let allPens = []; // Keep track of all created pens
+
+        const colorMap = {
+            'blue': '#3498db',
+            'red': '#e74c3c',
+            'green': '#27ae60',
+            'orange': '#f39c12',
+            'purple': '#9b59b6',
+            'teal': '#1abc9c'
+        };
+
+        class Pen {
+            constructor(inkLevel, inkColor, tipType, brand) {
+                this.inkLevel = inkLevel;
+                this.inkColor = inkColor;
+                this.tipType = tipType;
+                this.brand = brand;
+                this.isCapped = true;
+                this.id = ++penCount;
+                
+                this.log(`[HEAP] New '${this.brand}' Pen object #${this.id} created in memory.`);
+                this.log(`📊 Initial state: ${inkLevel}% ink, ${inkColor} color, ${tipType} tip`);
+            }
+
+            write(message) {
+                if (this.isCapped) {
+                    this.log("❌ Can't write. The cap is on!");
+                    return;
+                }
+                if (this.inkLevel <= 0) {
+                    this.log("❌ Can't write. The pen is out of ink!");
+                    return;
+                }
+                
+                this.log(`✍️ Writing: '${message}' with the ${this.inkColor} pen.`);
+                this.inkLevel = Math.max(0, this.inkLevel - message.length * 2);
+                this.updateVisual();
+            }
+
+            checkInkLevel() {
+                this.log(`🔍 Ink level is now: ${this.inkLevel}%`);
+            }
+
+            changeColor(newColor) {
+                this.log(`🎨 Changing color from ${this.inkColor} to ${newColor}.`);
+                this.inkColor = newColor;
+                this.updateVisual();
+            }
+
+            capOn() {
+                if (this.isCapped) {
+                    this.log("ℹ️ Cap is already on.");
+                    return;
+                }
+                this.log("🔒 Click! Capping the pen.");
+                this.isCapped = true;
+                this.updateVisual();
+            }
+
+            capOff() {
+                if (!this.isCapped) {
+                    this.log("ℹ️ Cap is already off.");
+                    return;
+                }
+                this.log("✂️ Click! Uncapping the pen.");
+                this.isCapped = false;
+                this.updateVisual();
+            }
+
+            log(message) {
+                const console = document.getElementById('console');
+                const line = document.createElement('div');
+                line.className = 'console-line';
+                line.textContent = message;
+                console.appendChild(line);
+                console.scrollTop = console.scrollHeight;
+            }
+
+            createVisual() {
+                const container = document.getElementById('pen-container');
+                const penDiv = document.createElement('div');
+                penDiv.className = 'pen-object';
+                penDiv.id = `pen-${this.id}`;
+                
+                // Add click event to select pen
+                penDiv.addEventListener('click', () => {
+                    // Remove selected class from all pens
+                    document.querySelectorAll('.pen-object').forEach(p => p.classList.remove('selected'));
+                    // Add selected class to this pen
+                    penDiv.classList.add('selected');
+                    // Set as current pen
+                    currentPen = this;
+                    this.log(`🎯 Pen #${this.id} selected as active pen.`);
+                });
+                
+                penDiv.innerHTML = `
+                    <div class="pen-visual">
+                        <div class="pen-body" style="--pen-color: ${colorMap[this.inkColor]}">
+                            <div class="pen-cap ${this.isCapped ? '' : 'off'}"></div>
+                            <div class="pen-tip"></div>
+                        </div>
+                    </div>
+                    <div class="attributes">
+                        <div class="attribute">🆔 ID: #${this.id}</div>
+                        <div class="attribute">🏷️ Brand: ${this.brand}</div>
+                        <div class="attribute">🎨 Color: ${this.inkColor}</div>
+                        <div class="attribute">✏️ Tip: ${this.tipType}</div>
+                        <div class="attribute">🔒 Cap: ${this.isCapped ? 'On' : 'Off'}</div>
+                    </div>
+                    <div class="attribute" style="grid-column: 1/-1;">
+                        🖋️ Ink Level: ${this.inkLevel}%
+                        <div class="ink-meter">
+                            <div class="ink-level" style="width: ${this.inkLevel}%"></div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(penDiv);
+                
+                // Auto-select this pen if it's the first one or no pen is selected
+                if (!currentPen || allPens.length === 0) {
+                    penDiv.click();
+                }
+                
+                return penDiv;
+            }
+
+            updateVisual() {
+                const penDiv = document.getElementById(`pen-${this.id}`);
+                if (!penDiv) return;
+
+                const penBody = penDiv.querySelector('.pen-body');
+                const penCap = penDiv.querySelector('.pen-cap');
+                const inkLevel = penDiv.querySelector('.ink-level');
+                
+                penBody.style.setProperty('--pen-color', colorMap[this.inkColor]);
+                penCap.className = `pen-cap ${this.isCapped ? '' : 'off'}`;
+                inkLevel.style.width = `${this.inkLevel}%`;
+                
+                // Update attribute text
+                const attributes = penDiv.querySelectorAll('.attribute');
+                attributes[2].textContent = `🎨 Color: ${this.inkColor}`;
+                attributes[4].textContent = `🔒 Cap: ${this.isCapped ? 'On' : 'Off'}`;
+                attributes[5].innerHTML = `🖋️ Ink Level: ${this.inkLevel}%
+                    <div class="ink-meter">
+                        <div class="ink-level" style="width: ${this.inkLevel}%"></div>
+                    </div>`;
+            }
+        }
+
+        function createPen() {
+            const brands = ['Bic', 'Parker', 'Pilot', 'Zebra', 'Papermate'];
+            const tips = ['ballpoint', 'gel', 'rollerball', 'felt-tip'];
+            
+            const brand = brands[Math.floor(Math.random() * brands.length)];
+            const tip = tips[Math.floor(Math.random() * tips.length)];
+            const inkLevel = Math.floor(Math.random() * 50) + 50; // 50-100%
+            
+            const newPen = new Pen(inkLevel, selectedColor, tip, brand);
+            allPens.push(newPen);
+            currentPen = newPen;
+            newPen.createVisual();
+        }
+
+        function removePen() {
+            if (!currentPen) {
+                log("❌ No pen selected. Create or select a pen first!");
+                return;
+            }
+            
+            const penToRemove = currentPen;
+            const penDiv = document.getElementById(`pen-${penToRemove.id}`);
+            
+            if (penDiv) {
+                penToRemove.log(`🗑️ [GARBAGE COLLECTOR] Pen #${penToRemove.id} is being removed from memory...`);
+                
+                // Add removing animation
+                penDiv.classList.add('removing');
+                
+                // Remove from DOM after animation
+                setTimeout(() => {
+                    penDiv.remove();
+                    penToRemove.log(`💀 [HEAP] Pen #${penToRemove.id} object destroyed and memory freed.`);
+                    
+                    // Remove from allPens array
+                    const index = allPens.indexOf(penToRemove);
+                    if (index > -1) {
+                        allPens.splice(index, 1);
+                    }
+                    
+                    // Select another pen if available
+                    if (allPens.length > 0) {
+                        currentPen = allPens[allPens.length - 1];
+                        const lastPenDiv = document.getElementById(`pen-${currentPen.id}`);
+                        if (lastPenDiv) {
+                            lastPenDiv.click();
+                        }
+                    } else {
+                        currentPen = null;
+                        log("ℹ️ No pens remaining in memory. Create a new pen to continue.");
+                    }
+                }, 500);
+            }
+        }
+
+        function uncapPen() {
+            if (!currentPen) {
+                log("❌ No pen selected. Create or select a pen first!");
+                return;
+            }
+            currentPen.capOff();
+        }
+
+        function capPen() {
+            if (!currentPen) {
+                log("❌ No pen selected. Create or select a pen first!");
+                return;
+            }
+            currentPen.capOn();
+        }
+
+        function writeSomething() {
+            if (!currentPen) {
+                log("❌ No pen selected. Create or select a pen first!");
+                return;
+            }
+            const messages = [
+                "Hello World!",
+                "OOP is awesome!",
+                "Learning Java",
+                "Object Oriented Programming",
+                "Encapsulation rocks!",
+                "Abstraction is key",
+                "Polymorphism power"
+            ];
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            currentPen.write(message);
+        }
+
+        function checkInk() {
+            if (!currentPen) {
+                log("❌ No pen selected. Create or select a pen first!");
+                return;
+            }
+            currentPen.checkInkLevel();
+        }
+
+        function changeColor() {
+            if (!currentPen) {
+                log("❌ No pen selected. Create or select a pen first!");
+                return;
+            }
+            currentPen.changeColor(selectedColor);
+        }
+
+        function clearConsole() {
+            const console = document.getElementById('console');
+            console.innerHTML = '<div class="console-line">🧹 Console cleared!</div>';
+        }
+
+        function log(message) {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        // Color picker functionality
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelector('.color-option.selected').classList.remove('selected');
+                this.classList.add('selected');
+                selectedColor = this.dataset.color;
+                log(`🎨 Selected color: ${selectedColor}`);
+            });
+        });
+
+        // Initialize with a welcome pen
+        setTimeout(() => {
+            createPen();
+        }, 1000);
+    </script>
+</body>
+</html>

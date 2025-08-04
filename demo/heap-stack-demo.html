@@ -1,0 +1,896 @@
+        .main-frame {
+            background: #ffe6e6 !important;
+            border-color: #dc3545 !important;
+        }
+
+        .method-frame {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Heap & Stack Memory Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #2C3E50, #34495E);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            min-height: 600px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                order: 2;
+                border-right: none;
+                border-top: 2px solid #e9ecef;
+            }
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 2px solid #e9ecef;
+        }
+
+        .controls h3 {
+            color: #2C3E50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .button-group {
+            margin-bottom: 20px;
+        }
+
+        .button-group h4 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+        }
+
+        .create-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .method-btn {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .utility-btn {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+        }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            background: linear-gradient(45deg, #868e96, #6c757d);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .memory-display {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 200px;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .memory-display {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 200px;
+            }
+        }
+
+        .memory-section {
+            border: 3px solid #dee2e6;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stack-section {
+            border-color: #fd7e14;
+        }
+
+        .heap-section {
+            border-color: #20c997;
+        }
+
+        .memory-header {
+            padding: 15px;
+            font-weight: bold;
+            text-align: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .stack-header {
+            background: linear-gradient(45deg, #fd7e14, #e07e00);
+        }
+
+        .heap-header {
+            background: linear-gradient(45deg, #20c997, #17a085);
+        }
+
+        .memory-content {
+            flex: 1;
+            padding: 15px;
+            background: #f8f9fa;
+            position: relative;
+            overflow-y: auto;
+            min-height: 300px;
+        }
+
+        .stack-frame {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            animation: slideInRight 0.5s ease;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .heap-object {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+            animation: zoomIn 0.6s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .object-header {
+            font-weight: bold;
+            color: #0c5460;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #bee5eb;
+            padding-bottom: 8px;
+        }
+
+        .object-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 4px 0;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #17a2b8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .field-name {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .field-value {
+            color: #007bff;
+            font-weight: 500;
+            font-family: 'Courier New', monospace;
+        }
+
+        .console-output {
+            grid-column: 1 / -1;
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+            border: 2px solid #4a5568;
+        }
+
+        .console-line {
+            margin: 3px 0;
+            animation: fadeIn 0.5s ease;
+            line-height: 1.4;
+        }
+
+        .console-line.error {
+            color: #fc8181;
+        }
+
+        .console-line.success {
+            color: #9ae6b4;
+        }
+
+        .console-line.info {
+            color: #90cdf4;
+        }
+
+        .reference-arrow {
+            position: absolute;
+            top: 50%;
+            right: -15px;
+            font-size: 1.2rem;
+            color: #dc3545;
+            animation: pulse 2s infinite;
+            background: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #dc3545;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            margin-top: 50px;
+            padding: 20px;
+        }
+
+        .method-info {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .local-var {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin: 4px 0;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .highlight {
+            animation: glow 1s ease-in-out;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-created {
+            background: #28a745;
+        }
+
+        .status-calling {
+            background: #ffc107;
+        }
+
+        .status-idle {
+            background: #6c757d;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes glow {
+            0%, 100% { 
+                box-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
+                transform: scale(1.02);
+            }
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .execution-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖊️ Java Memory Management Demo</h1>
+            <p>Interactive demonstration of Heap and Stack memory allocation with the Pen class</p>
+        </div>
+
+        <div class="main-content">
+            <div class="controls">
+                <h3>🎮 Controls</h3>
+                
+                <div class="button-group">
+                    <h4>Object Creation</h4>
+                    <button class="create-btn" onclick="createPen()">
+                        <span class="status-indicator status-idle" id="createStatus"></span>
+                        📝 new Pen(75, "blue", "fine", "BIC")
+                    </button>
+                </div>
+
+                <div class="button-group">
+                    <h4>Method Calls</h4>
+                    <button class="method-btn" onclick="callMethod('capOff')" disabled id="capOffBtn">
+                        🔓 pen.capOff()
+                    </button>
+                    <button class="method-btn" onclick="callMethod('write', 'Hello World')" disabled id="writeBtn">
+                        ✍️ pen.write("Hello World")
+                    </button>
+                    <button class="method-btn" onclick="callMethod('checkInkLevel')" disabled id="checkInkBtn">
+                        🔍 pen.checkInkLevel()
+                    </button>
+                    <button class="method-btn" onclick="callMethod('changeColor', 'red')" disabled id="changeColorBtn">
+                        🎨 pen.changeColor("red")
+                    </button>
+                    <button class="method-btn" onclick="callMethod('capOn')" disabled id="capOnBtn">
+                        🔒 pen.capOn()
+                    </button>
+                </div>
+
+                <div class="button-group">
+                    <h4>Advanced Operations</h4>
+                    <button class="method-btn" onclick="callMethod('write', 'This is a very long message that will use lots of ink!')" disabled id="longWriteBtn">
+                        📝 Long Write (uses more ink)
+                    </button>
+                    <button class="utility-btn" onclick="showReference()">
+                        🔗 Show Reference Connection
+                    </button>
+                </div>
+
+                <div class="button-group">
+                    <h4>Demo Control</h4>
+                    <button class="utility-btn" onclick="clearConsole()">
+                        🗑️ Clear Console
+                    </button>
+                    <button class="reset-btn" onclick="resetDemo()">
+                        🔄 Reset Demo
+                    </button>
+                </div>
+            </div>
+
+            <div class="memory-display">
+                <div class="memory-section stack-section">
+                    <div class="memory-header stack-header">
+                        📚 STACK MEMORY
+                        <div style="font-size: 0.8rem; opacity: 0.9; margin-top: 5px;">
+                            Method calls & local variables (LIFO)
+                        </div>
+                    </div>
+                    <div class="memory-content" id="stackContent">
+                        <div class="empty-message">
+                            Stack is empty<br>
+                            <small>Create an object or call methods to see stack frames</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="memory-section heap-section">
+                    <div class="memory-header heap-header">
+                        🏠 HEAP MEMORY
+                        <div style="font-size: 0.8rem; opacity: 0.9; margin-top: 5px;">
+                            Object instances & their data
+                        </div>
+                    </div>
+                    <div class="memory-content" id="heapContent">
+                        <div class="empty-message">
+                            Heap is empty<br>
+                            <small>Create a Pen object to see it allocated here</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="console-output" id="console">
+                    <div class="console-line info">💻 Console Output:</div>
+                    <div class="console-line">Ready to create Pen objects and call methods...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let penObject = null;
+        let stackFrameCounter = 0;
+        let isExecuting = false;
+
+        function createPen() {
+            if (isExecuting) return;
+            isExecuting = true;
+            
+            const createStatus = document.getElementById('createStatus');
+            createStatus.className = 'status-indicator status-calling';
+            
+            // Reset if object already exists
+            if (penObject) {
+                resetDemo();
+            }
+            
+            // Create stack frame for constructor
+            addStackFrame('Pen(int, String, String, String)', 'new Pen(75, "blue", "fine", "BIC")', [
+                'int inkLevel = 75',
+                'String inkColor = "blue"',
+                'String tipType = "fine"',
+                'String brand = "BIC"',
+                'this.isCapped = true'
+            ], 'Pen');
+
+            // Simulate object creation delay
+            setTimeout(() => {
+                // Create pen object in heap
+                penObject = {
+                    inkLevel: 75,
+                    inkColor: 'blue',
+                    tipType: 'fine',
+                    brand: 'BIC',
+                    isCapped: true
+                };
+
+                displayHeapObject();
+                addConsoleOutput('[A new \'BIC\' Pen object has been created on the HEAP.]', 'success');
+                
+                // Remove constructor stack frame
+                setTimeout(() => {
+                    removeTopStackFrame();
+                    enableMethodButtons();
+                    createStatus.className = 'status-indicator status-created';
+                    isExecuting = false;
+                }, 1500);
+            }, 1000);
+        }
+
+        function displayHeapObject() {
+            const heapContent = document.getElementById('heapContent');
+            const capStatus = penObject.isCapped ? '🔒 Capped' : '🔓 Uncapped';
+            const inkColor = penObject.inkLevel <= 0 ? '#dc3545' : '#007bff';
+            
+            heapContent.innerHTML = `
+                <div class="heap-object" id="penObject">
+                    <div class="object-header">
+                        🖊️ Pen Object (Address: 0x${Math.random().toString(16).substr(2, 8).toUpperCase()})
+                        <div style="font-size: 0.8rem; margin-top: 4px;">${capStatus}</div>
+                    </div>
+                    <div class="object-field">
+                        <span class="field-name">inkLevel:</span>
+                        <span class="field-value" style="color: ${inkColor}">${penObject.inkLevel}%</span>
+                    </div>
+                    <div class="object-field">
+                        <span class="field-name">inkColor:</span>
+                        <span class="field-value" style="color: ${getColorCode(penObject.inkColor)}">"${penObject.inkColor}"</span>
+                    </div>
+                    <div class="object-field">
+                        <span class="field-name">tipType:</span>
+                        <span class="field-value">"${penObject.tipType}"</span>
+                    </div>
+                    <div class="object-field">
+                        <span class="field-name">brand:</span>
+                        <span class="field-value">"${penObject.brand}"</span>
+                    </div>
+                    <div class="object-field">
+                        <span class="field-name">isCapped:</span>
+                        <span class="field-value" style="color: ${penObject.isCapped ? '#dc3545' : '#28a745'}">${penObject.isCapped}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getColorCode(colorName) {
+            const colors = {
+                'blue': '#007bff',
+                'red': '#dc3545',
+                'green': '#28a745',
+                'black': '#343a40',
+                'purple': '#6f42c1'
+            };
+            return colors[colorName] || '#007bff';
+        }
+
+        function addStackFrame(methodName, call, localVars = [], returnType = 'void') {
+            const stackContent = document.getElementById('stackContent');
+            if (stackContent.querySelector('.empty-message')) {
+                stackContent.innerHTML = '';
+            }
+
+            const frameId = `frame-${++stackFrameCounter}`;
+            const localVarsHtml = localVars.map(varr => 
+                `<div class="local-var">📍 ${varr}</div>`
+            ).join('');
+
+            // Add main() frame if this is the first method call
+            if (!stackContent.querySelector('.stack-frame')) {
+                const mainFrameHtml = `
+                    <div class="stack-frame main-frame" id="main-frame">
+                        <div style="font-weight: bold; color: #dc3545; display: flex; align-items: center;">
+                            🏠 main(String[] args)
+                            <div class="execution-status">Active</div>
+                        </div>
+                        <div class="method-info">public static void main(String[] args)</div>
+                        <div class="local-var">📍 Pen pen = new Pen(...)</div>
+                        <div class="reference-arrow">🔽</div>
+                    </div>
+                `;
+                stackContent.insertAdjacentHTML('afterbegin', mainFrameHtml);
+            }
+
+            const frameHtml = `
+                <div class="stack-frame method-frame" id="${frameId}">
+                    <div style="font-weight: bold; color: #e07e00; display: flex; align-items: center;">
+                        📞 ${methodName}
+                        <div class="execution-status">Executing...</div>
+                    </div>
+                    <div class="method-info">${call}</div>
+                    <div style="font-size: 0.75rem; color: #6c757d; margin-top: 4px;">
+                        Return Type: ${returnType}
+                    </div>
+                    ${localVarsHtml}
+                    <div class="reference-arrow">➡️</div>
+                </div>
+            `;
+
+            stackContent.insertAdjacentHTML('afterbegin', frameHtml);
+        }
+
+        function removeTopStackFrame() {
+            const stackContent = document.getElementById('stackContent');
+            const topFrame = stackContent.querySelector('.method-frame');
+            if (topFrame) {
+                topFrame.style.animation = 'slideOutRight 0.5s ease';
+                setTimeout(() => {
+                    topFrame.remove();
+                    
+                    // Update main frame status
+                    const mainFrame = stackContent.querySelector('.main-frame');
+                    if (mainFrame && !stackContent.querySelector('.method-frame')) {
+                        const statusEl = mainFrame.querySelector('.execution-status');
+                        if (statusEl) statusEl.textContent = 'Waiting...';
+                    }
+                }, 500);
+            }
+        }
+
+        function callMethod(methodName, parameter = null) {
+            if (!penObject || isExecuting) return;
+            isExecuting = true;
+
+            // Define method signatures and return types
+            const methodInfo = {
+                'capOff': { signature: 'capOff()', returnType: 'void' },
+                'capOn': { signature: 'capOn()', returnType: 'void' },
+                'write': { signature: 'write(String)', returnType: 'void' },
+                'checkInkLevel': { signature: 'checkInkLevel()', returnType: 'void' },
+                'changeColor': { signature: 'changeColor(String)', returnType: 'void' }
+            };
+
+            const method = methodInfo[methodName];
+            const call = parameter ? 
+                `pen.${methodName}("${parameter}")` : 
+                `pen.${methodName}()`;
+
+            // Add stack frame with appropriate local variables
+            const localVars = ['this = pen (reference to heap object)'];
+            if (parameter) {
+                if (methodName === 'write') {
+                    localVars.push(`String message = "${parameter}"`);
+                    localVars.push(`int messageLength = ${parameter.length}`);
+                } else if (methodName === 'changeColor') {
+                    localVars.push(`String newColor = "${parameter}"`);
+                    localVars.push(`String oldColor = "${penObject.inkColor}"`);
+                }
+            }
+            
+            addStackFrame(method.signature, call, localVars, method.returnType);
+
+            // Highlight the heap object
+            const heapObj = document.getElementById('penObject');
+            if (heapObj) {
+                heapObj.classList.add('highlight');
+                setTimeout(() => heapObj.classList.remove('highlight'), 1000);
+            }
+
+            // Execute method logic after delay
+            setTimeout(() => {
+                executeMethod(methodName, parameter);
+                
+                // Remove stack frame
+                setTimeout(() => {
+                    removeTopStackFrame();
+                    updateButtonStates();
+                    isExecuting = false;
+                }, 1500);
+            }, 800);
+        }
+
+        function executeMethod(methodName, parameter) {
+            switch (methodName) {
+                case 'capOff':
+                    if (penObject.isCapped) {
+                        penObject.isCapped = false;
+                        addConsoleOutput('Click! Uncapping the pen.', 'success');
+                        displayHeapObject();
+                    } else {
+                        addConsoleOutput('The pen is already uncapped.', 'info');
+                    }
+                    break;
+
+                case 'capOn':
+                    if (!penObject.isCapped) {
+                        penObject.isCapped = true;
+                        addConsoleOutput('Click! Capping the pen.', 'success');
+                        displayHeapObject();
+                    } else {
+                        addConsoleOutput('The pen is already capped.', 'info');
+                    }
+                    break;
+
+                case 'write':
+                    if (penObject.isCapped) {
+                        addConsoleOutput('Can\'t write. The cap is on!', 'error');
+                    } else if (penObject.inkLevel <= 0) {
+                        addConsoleOutput('Can\'t write. The pen is out of ink!', 'error');
+                    } else {
+                        addConsoleOutput(`Writing: '${parameter}' with the ${penObject.inkColor} pen.`, 'success');
+                        penObject.inkLevel -= parameter.length;
+                        if (penObject.inkLevel < 0) penObject.inkLevel = 0;
+                        displayHeapObject();
+                        
+                        if (penObject.inkLevel <= 0) {
+                            addConsoleOutput('⚠️ Pen is now out of ink!', 'error');
+                        } else if (penObject.inkLevel <= 10) {
+                            addConsoleOutput('⚠️ Ink level is getting low!', 'error');
+                        }
+                    }
+                    break;
+
+                case 'checkInkLevel':
+                    const level = penObject.inkLevel;
+                    let message = `Ink level is now: ${level}%`;
+                    let type = 'info';
+                    
+                    if (level <= 0) {
+                        message += ' - EMPTY!';
+                        type = 'error';
+                    } else if (level <= 20) {
+                        message += ' - LOW!';
+                        type = 'error';
+                    }
+                    
+                    addConsoleOutput(message, type);
+                    break;
+
+                case 'changeColor':
+                    const oldColor = penObject.inkColor;
+                    addConsoleOutput(`Changing color from ${oldColor} to ${parameter}.`, 'success');
+                    penObject.inkColor = parameter;
+                    displayHeapObject();
+                    break;
+            }
+        }
+
+        function showReference() {
+            if (!penObject || isExecuting) {
+                addConsoleOutput('Create a Pen object first!', 'error');
+                return;
+            }
+            
+            isExecuting = true;
+            addStackFrame('showReference()', 'Demonstrating stack-to-heap reference', [
+                'Pen pen = reference to heap object',
+                'Address: 0x7A1F2C3D',
+                'Object type: Pen'
+            ], 'void');
+            
+            addConsoleOutput('🔗 Reference connection shown: Stack variable points to Heap object', 'info');
+            addConsoleOutput('Stack stores the REFERENCE (memory address), Heap stores the OBJECT DATA', 'info');
+            
+            setTimeout(() => {
+                removeTopStackFrame();
+                isExecuting = false;
+            }, 3000);
+        }
+
+        function updateButtonStates() {
+            if (!penObject) return;
+            
+            // Update cap buttons based on state
+            document.getElementById('capOffBtn').disabled = !penObject.isCapped;
+            document.getElementById('capOnBtn').disabled = penObject.isCapped;
+            
+            // Enable/disable write buttons based on cap and ink
+            const canWrite = !penObject.isCapped && penObject.inkLevel > 0;
+            document.getElementById('writeBtn').disabled = !canWrite;
+            document.getElementById('longWriteBtn').disabled = !canWrite;
+        }
+
+        function addConsoleOutput(message, type = 'default') {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function clearConsole() {
+            const console = document.getElementById('console');
+            console.innerHTML = `
+                <div class="console-line info">💻 Console Output:</div>
+                <div class="console-line">Console cleared.</div>
+            `;
+        }
+
+        function enableMethodButtons() {
+            document.getElementById('checkInkBtn').disabled = false;
+            document.getElementById('changeColorBtn').disabled = false;
+            document.getElementById('longWriteBtn').disabled = false;
+            updateButtonStates(); // This will set the correct states for cap and write buttons
+        }
+
+        function disableMethodButtons() {
+            const methodButtons = ['capOffBtn', 'writeBtn', 'checkInkBtn', 'changeColorBtn', 'capOnBtn', 'longWriteBtn'];
+            methodButtons.forEach(id => {
+                document.getElementById(id).disabled = true;
+            });
+        }
+
+        function resetDemo() {
+            if (isExecuting) return;
+            
+            penObject = null;
+            stackFrameCounter = 0;
+            isExecuting = false;
+            
+            document.getElementById('createStatus').className = 'status-indicator status-idle';
+            
+            document.getElementById('stackContent').innerHTML = 
+                '<div class="empty-message">Stack is empty<br><small>Create an object or call methods to see the call stack</small></div>';
+            
+            document.getElementById('heapContent').innerHTML = 
+                '<div class="empty-message">Heap is empty<br><small>Create a Pen object to see it allocated here</small></div>';
+            
+            clearConsole();
+            addConsoleOutput('Demo reset. Ready to create Pen objects...', 'info');
+            addConsoleOutput('The stack will show method calls (call stack) with their local variables', 'info');
+            
+            disableMethodButtons();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            addConsoleOutput('Memory demo initialized. Click "new Pen()" to start!', 'success');
+            addConsoleOutput('📚 Stack will show the CALL STACK (method invocations) with local variables', 'info');
+            addConsoleOutput('🏠 Heap will show the OBJECT DATA (instance variables)', 'info');
+        });
+
+        // Prevent multiple rapid clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON' && isExecuting) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+    </script>
+</body>
+</html>

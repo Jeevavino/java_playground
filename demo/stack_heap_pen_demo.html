@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stack vs Heap Memory - Pen Object</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .memory-container {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .memory-section {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .memory-section:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stack {
+            border-left: 5px solid #e74c3c;
+        }
+        
+        .heap {
+            border-left: 5px solid #3498db;
+        }
+        
+        .memory-title {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .stack .memory-title {
+            color: #e74c3c;
+        }
+        
+        .heap .memory-title {
+            color: #3498db;
+        }
+        
+        .memory-items {
+            min-height: 300px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        
+        .memory-item {
+            background: #fff;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .memory-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .stack-item {
+            border-left-color: #e74c3c;
+            animation: slideInLeft 0.5s ease;
+        }
+        
+        .heap-item {
+            border-left-color: #3498db;
+            animation: slideInRight 0.5s ease;
+        }
+        
+        .reference-arrow {
+            color: #e67e22;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 0 10px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(-1px);
+        }
+        
+        .explanation {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .explanation h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        
+        .explanation p {
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .code-example {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            margin: 15px 0;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .highlight {
+            background: #f39c12;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        @keyframes slideInLeft {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .pen-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .pen-icon {
+            font-size: 3em;
+            color: #3498db;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖊️ Stack vs Heap Memory with Pen Objects</h1>
+        
+        <div class="explanation">
+            <h3>Understanding Memory with Pen Objects</h3>
+            <p><strong>Stack Memory:</strong> Stores local variables and references (like variable names). Fast but limited space.</p>
+            <p><strong>Heap Memory:</strong> Stores actual objects and their data. Larger space but slower access.</p>
+            
+            <div class="code-example">
+Pen myPen = new Pen("Blue", 100);  // myPen reference → Stack
+                                   // Actual Pen object → Heap
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="createPen()">Create New Pen</button>
+            <button onclick="usePen()">Write with Pen</button>
+            <button onclick="deletePen()">Delete Pen</button>
+            <button onclick="clearMemory()">Clear All Memory</button>
+        </div>
+        
+        <div class="memory-container">
+            <div class="memory-section stack">
+                <h2 class="memory-title">📚 STACK MEMORY</h2>
+                <p style="text-align: center; color: #666; margin-bottom: 15px;">
+                    <strong>Fast • Limited • Local Variables</strong>
+                </p>
+                <div class="memory-items" id="stack-memory">
+                    <div style="text-align: center; color: #999; padding: 20px;">
+                        Stack is empty - create a pen to see references!
+                    </div>
+                </div>
+            </div>
+            
+            <div class="memory-section heap">
+                <h2 class="memory-title">🏗️ HEAP MEMORY</h2>
+                <p style="text-align: center; color: #666; margin-bottom: 15px;">
+                    <strong>Slower • Large • Object Storage</strong>
+                </p>
+                <div class="memory-items" id="heap-memory">
+                    <div style="text-align: center; color: #999; padding: 20px;">
+                        Heap is empty - create a pen to see objects!
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h3>What Happens When You Create a Pen?</h3>
+            <div class="pen-visual">
+                <span>Stack: myPen</span>
+                <span class="reference-arrow">→ points to →</span>
+                <span class="pen-icon">🖊️</span>
+                <span>← Heap: Pen Object</span>
+            </div>
+            
+            <div class="code-example">
+// When you write: Pen myPen = new Pen("Blue", 100);
+
+STACK:                    HEAP:
+┌─────────────┐          ┌──────────────────────┐
+│ myPen       │ ------→  │ Pen Object @x1001    │
+│ (reference) │          │ ├── color: "Blue"    │
+│ = x1001     │          │ ├── inkLevel: 100    │
+└─────────────┘          │ ├── brand: "BIC"     │
+                         │ └── methods...       │
+                         └──────────────────────┘
+            </div>
+            
+            <p><span class="highlight">Key Point:</span> The variable name lives in Stack, but the actual object data lives in Heap!</p>
+        </div>
+    </div>
+
+    <script>
+        let penCounter = 0;
+        let pens = {};
+        
+        function createPen() {
+            penCounter++;
+            const colors = ['Blue', 'Black', 'Red', 'Green', 'Purple'];
+            const brands = ['BIC', 'Pilot', 'Sharpie', 'Parker', 'Uni-ball'];
+            
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const brand = brands[Math.floor(Math.random() * brands.length)];
+            const inkLevel = Math.floor(Math.random() * 100) + 1;
+            const penId = `pen${penCounter}`;
+            const memoryAddress = `0x${Math.floor(Math.random() * 16777215).toString(16).toUpperCase()}`;
+            
+            // Store pen data
+            pens[penId] = {
+                color: color,
+                brand: brand,
+                inkLevel: inkLevel,
+                address: memoryAddress,
+                uses: 0
+            };
+            
+            // Add to Stack
+            const stackDiv = document.getElementById('stack-memory');
+            if (stackDiv.children.length === 1 && stackDiv.children[0].style.textAlign === 'center') {
+                stackDiv.innerHTML = '';
+            }
+            
+            const stackItem = document.createElement('div');
+            stackItem.className = 'memory-item stack-item';
+            stackItem.id = `stack-${penId}`;
+            stackItem.innerHTML = `
+                <strong>📍 ${penId}</strong><br>
+                <small>Reference Variable</small><br>
+                <span class="reference-arrow">→ Points to ${memoryAddress}</span>
+            `;
+            stackDiv.appendChild(stackItem);
+            
+            // Add to Heap
+            const heapDiv = document.getElementById('heap-memory');
+            if (heapDiv.children.length === 1 && heapDiv.children[0].style.textAlign === 'center') {
+                heapDiv.innerHTML = '';
+            }
+            
+            const heapItem = document.createElement('div');
+            heapItem.className = 'memory-item heap-item';
+            heapItem.id = `heap-${penId}`;
+            heapItem.innerHTML = `
+                <strong>🖊️ Pen Object @ ${memoryAddress}</strong><br>
+                <strong>Properties:</strong><br>
+                • Color: ${color}<br>
+                • Brand: ${brand}<br>
+                • Ink Level: ${inkLevel}%<br>
+                • Times Used: 0<br>
+                <strong>Methods:</strong> write(), checkInk(), capOn()
+            `;
+            heapDiv.appendChild(heapItem);
+        }
+        
+        function usePen() {
+            const penIds = Object.keys(pens);
+            if (penIds.length === 0) {
+                alert('Create a pen first!');
+                return;
+            }
+            
+            const randomPenId = penIds[Math.floor(Math.random() * penIds.length)];
+            const pen = pens[randomPenId];
+            
+            if (pen.inkLevel <= 0) {
+                alert(`${randomPenId} is out of ink!`);
+                return;
+            }
+            
+            // Use some ink
+            pen.inkLevel = Math.max(0, pen.inkLevel - Math.floor(Math.random() * 10) - 5);
+            pen.uses++;
+            
+            // Update heap display
+            const heapItem = document.getElementById(`heap-${randomPenId}`);
+            heapItem.innerHTML = `
+                <strong>🖊️ Pen Object @ ${pen.address}</strong><br>
+                <strong>Properties:</strong><br>
+                • Color: ${pen.color}<br>
+                • Brand: ${pen.brand}<br>
+                • Ink Level: ${pen.inkLevel}%<br>
+                • Times Used: ${pen.uses}<br>
+                <strong>Methods:</strong> write(), checkInk(), capOn()
+            `;
+            
+            // Visual feedback
+            heapItem.style.background = '#e8f5e8';
+            setTimeout(() => {
+                heapItem.style.background = '#fff';
+            }, 1000);
+        }
+        
+        function deletePen() {
+            const penIds = Object.keys(pens);
+            if (penIds.length === 0) {
+                alert('No pens to delete!');
+                return;
+            }
+            
+            const randomPenId = penIds[Math.floor(Math.random() * penIds.length)];
+            
+            // Remove from memory displays
+            const stackItem = document.getElementById(`stack-${randomPenId}`);
+            const heapItem = document.getElementById(`heap-${randomPenId}`);
+            
+            if (stackItem) stackItem.remove();
+            if (heapItem) heapItem.remove();
+            
+            // Remove from data
+            delete pens[randomPenId];
+            
+            // Show empty message if no pens left
+            updateEmptyMessages();
+        }
+        
+        function clearMemory() {
+            pens = {};
+            penCounter = 0;
+            
+            document.getElementById('stack-memory').innerHTML = `
+                <div style="text-align: center; color: #999; padding: 20px;">
+                    Stack is empty - create a pen to see references!
+                </div>
+            `;
+            
+            document.getElementById('heap-memory').innerHTML = `
+                <div style="text-align: center; color: #999; padding: 20px;">
+                    Heap is empty - create a pen to see objects!
+                </div>
+            `;
+        }
+        
+        function updateEmptyMessages() {
+            const stackDiv = document.getElementById('stack-memory');
+            const heapDiv = document.getElementById('heap-memory');
+            
+            if (Object.keys(pens).length === 0) {
+                stackDiv.innerHTML = `
+                    <div style="text-align: center; color: #999; padding: 20px;">
+                        Stack is empty - create a pen to see references!
+                    </div>
+                `;
+                
+                heapDiv.innerHTML = `
+                    <div style="text-align: center; color: #999; padding: 20px;">
+                        Heap is empty - create a pen to see objects!
+                    </div>
+                `;
+            }
+        }
+        
+        // Create initial pen for demo
+        setTimeout(createPen, 1000);
+    </script>
+</body>
+</html>

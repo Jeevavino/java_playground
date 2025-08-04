@@ -1,0 +1,217 @@
+// ========== ABSTRACT BASE CLASS ==========
+public abstract class Animal {
+    protected String name;
+    protected int age;
+    protected static int totalAnimals = 0;
+
+    public Animal(String name, int age) {
+        this.name = name;
+        this.age = age;
+        totalAnimals++;
+        System.out.println("Animal created: " + name);
+    }
+
+    public void eat() {
+        System.out.println(name + " is eating");
+    }
+
+    public abstract void makeSound();
+    public abstract void move();
+
+    public static int getTotalAnimals() { return totalAnimals; }
+}
+
+// ========== INHERITANCE WITH INTERFACES ==========
+class Bird extends Animal implements Flyable {
+    public Bird(String name, int age) {
+        super(name, age);
+    }
+
+    @Override
+    public void makeSound() {
+        System.out.println(name + " chirps");
+    }
+
+    @Override
+    public void move() {
+        System.out.println(name + " hops");
+    }
+
+    @Override
+    public void fly() {
+        System.out.println(name + " is flying");
+    }
+
+    @Override
+    public void eat() {
+        super.eat();
+        System.out.println(name + " pecks at food");
+    }
+}
+
+class Fish extends Animal implements Swimmable {
+    public Fish(String name, int age) {
+        super(name, age);
+    }
+
+    @Override
+    public void makeSound() {
+        System.out.println(name + " bubbles");
+    }
+
+    @Override
+    public void move() {
+        System.out.println(name + " swims");
+    }
+
+    @Override
+    public void swim() {
+        System.out.println(name + " swims gracefully");
+    }
+}
+
+class Duck extends Animal implements Flyable, Swimmable {
+    public Duck(String name, int age) {
+        super(name, age);
+    }
+
+    @Override
+    public void makeSound() {
+        System.out.println(name + " quacks");
+    }
+
+    @Override
+    public void move() {
+        System.out.println(name + " waddles");
+    }
+
+    @Override
+    public void fly() {
+        System.out.println(name + " flies over water");
+    }
+
+    @Override
+    public void swim() {
+        System.out.println(name + " paddles on water");
+    }
+}
+
+// ========== NEW: ENHANCED CLASSES TO SHOW POLYMORPHISM BENEFITS ==========
+class Cat extends Animal {
+    public Cat(String name, int age) {
+        super(name, age);
+    }
+
+    @Override
+    public void makeSound() {
+        System.out.println(name + " meows");
+    }
+
+    @Override
+    public void move() {
+        System.out.println(name + " prowls");
+    }
+}
+
+// ========== ZOO KEEPER CLASS - SHOWS POLYMORPHISM BENEFITS ==========
+class ZooKeeper {
+    private String keeperName;
+
+    public ZooKeeper(String name) {
+        this.keeperName = name;
+    }
+
+    // ✅ WITH POLYMORPHISM - One method handles ALL animal types
+    public void feedAllAnimals(Animal[] animals) {
+        System.out.println(keeperName + " is feeding all animals:");
+        for (Animal animal : animals) {
+            animal.eat(); // Works for ANY animal type!
+        }
+    }
+
+    // ✅ WITH POLYMORPHISM - One method for any animal
+    public void makeAnimalSound(Animal animal) {
+        animal.makeSound(); // Different sound based on actual animal type
+    }
+
+    // ❌ WITHOUT POLYMORPHISM - Would need separate methods (BAD!)
+    /*
+    public void feedBird(Bird bird) { bird.eat(); }
+    public void feedFish(Fish fish) { fish.eat(); }
+    public void feedDuck(Duck duck) { duck.eat(); }
+    public void feedCat(Cat cat) { cat.eat(); }
+    // Need new method for every new animal type!
+    */
+}
+
+// ========== INTERFACES ==========
+interface Flyable {
+    void fly();
+}
+
+interface Swimmable {
+    void swim();
+}
+
+class AnimalTest {
+    public static void main(String[] args) {
+        System.out.println("=== WHY DO WE NEED POLYMORPHISM? ===");
+
+        // Create animals
+        Bird sparrow = new Bird("Sparrow", 2);
+        Fish goldfish = new Fish("Goldie", 1);
+        Duck mallard = new Duck("Mallard", 3);
+        Cat whiskers = new Cat("Whiskers", 4);
+
+        ZooKeeper keeper = new ZooKeeper("John");
+
+        System.out.println("\n=== BENEFIT 1: ONE METHOD FOR ALL TYPES ===");
+        // ✅ Polymorphism allows ONE method to handle ALL animal types
+        Animal[] allAnimals = {sparrow, goldfish, mallard, whiskers};
+        keeper.feedAllAnimals(allAnimals); // Works with any Animal!
+
+        System.out.println("\n=== BENEFIT 2: SAME CALL, DIFFERENT BEHAVIOR ===");
+        // ✅ Same method call, but each animal behaves differently
+        for (Animal animal : allAnimals) {
+            System.out.print("Making sound: ");
+            keeper.makeAnimalSound(animal); // Automatic correct behavior!
+        }
+
+        System.out.println("\n=== BENEFIT 3: EASY TO ADD NEW TYPES ===");
+        // ✅ Add new animal - no changes needed to existing code!
+        Animal[] moreAnimals = {new Cat("Fluffy", 2), new Bird("Eagle", 5)};
+        keeper.feedAllAnimals(moreAnimals); // Still works!
+
+        System.out.println("\n=== BENEFIT 4: FLEXIBLE COLLECTIONS ===");
+        // ✅ Store different types in same array/list
+        Animal[] zoo = {sparrow, goldfish, mallard, whiskers};
+
+        System.out.println("Zoo animals moving:");
+        for (Animal animal : zoo) {
+            animal.move(); // Each moves differently automatically!
+        }
+
+        System.out.println("\n=== WITHOUT POLYMORPHISM (PROBLEMS) ===");
+        demonstrateProblemsWithoutPolymorphism(sparrow, goldfish, mallard, whiskers);
+    }
+
+    // Shows what code would look like WITHOUT polymorphism
+    public static void demonstrateProblemsWithoutPolymorphism(Bird bird, Fish fish, Duck duck, Cat cat) {
+        System.out.println("❌ Without polymorphism, you'd need:");
+
+        // Separate handling for each type - LOTS of duplicate code!
+        System.out.println("Feeding bird specifically...");
+        bird.eat();
+
+        System.out.println("Feeding fish specifically...");
+        fish.eat();
+
+        System.out.println("Feeding duck specifically...");
+        duck.eat();
+
+        System.out.println("Feeding cat specifically...");
+        cat.eat();
+
+        System.out.println("❌ Problems: Duplicate code, hard to maintain, not scalable!");
+    }
+}

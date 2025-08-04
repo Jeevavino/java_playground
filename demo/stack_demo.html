@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Stack & Heap Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-fira {
+            font-family: 'Fira Code', monospace;
+        }
+        .memory-box {
+            border: 2px solid;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            min-height: 400px; /* Increased height for stack calls */
+            transition: all 0.3s ease-in-out;
+        }
+        .stack {
+            border-color: #3b82f6; /* blue-500 */
+        }
+        .heap {
+            border-color: #ec4899; /* pink-500 */
+        }
+        .stack-frame, .heap-object {
+            border: 1px solid #9ca3af; /* gray-400 */
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            background-color: #f9fafb; /* gray-50 */
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        .stack-content-container {
+            display: flex;
+            flex-direction: column-reverse; /* This makes the stack grow upwards */
+            justify-content: flex-start;
+        }
+        .heap-object.orphaned {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            opacity: 0.6;
+            border-color: #dc2626; /* red-600 */
+        }
+        .heap-object.orphaned .heap-value {
+            color: #fee2e2; /* red-100 */
+        }
+        .arrow-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            pointer-events: none; /* Allows clicking through the SVG */
+        }
+        .console-output {
+            background-color: #1f2937; /* gray-800 */
+            color: #d1d5db; /* gray-300 */
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 200px;
+            overflow-y: auto;
+        }
+        .console-line {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Java Stack & Heap Visualization</h1>
+            <p class="mt-2 text-lg text-gray-600">Demonstrating Instance vs. Local Variables and Scope.</p>
+        </header>
+
+        <!-- Controls -->
+        <div class="bg-white p-4 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-bold mb-4 text-center">Controls</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+                <button id="createBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white">1. Create Pen</button>
+                <button id="capOffBtn" class="btn bg-gray-600 hover:bg-gray-700 text-white" disabled>2. Cap Off</button>
+                <button id="writeBtn" class="btn bg-gray-600 hover:bg-gray-700 text-white" disabled>3. Write</button>
+                <button id="changeColorBtn" class="btn bg-gray-600 hover:bg-gray-700 text-white" disabled>4. Change Color</button>
+                <button id="capOnBtn" class="btn bg-gray-600 hover:bg-gray-700 text-white" disabled>5. Cap On</button>
+                <button id="nullifyBtn" class="btn bg-red-600 hover:bg-red-700 text-white" disabled>6. Nullify Ref</button>
+                <button id="resetBtn" class="btn bg-red-600 hover:bg-red-700 text-white">Reset</button>
+            </div>
+        </div>
+
+        <!-- Memory Visualization -->
+        <div class="relative">
+            <div id="arrow-svg-container" class="arrow-container"></div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Stack Memory -->
+                <div class="memory-box stack">
+                    <h2 class="text-2xl font-bold text-center text-blue-600 mb-4">Stack Memory</h2>
+                    <div id="stack-content" class="stack-content-container">
+                        <p class="text-gray-500 text-center italic self-center">Stack is currently empty.</p>
+                    </div>
+                </div>
+
+                <!-- Heap Memory -->
+                <div class="memory-box heap">
+                    <h2 class="text-2xl font-bold text-center text-pink-600 mb-4">Heap Memory</h2>
+                    <div id="heap-content">
+                        <p class="text-gray-500 text-center italic">Heap is currently empty.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Explanations -->
+        <div id="explanation-section" class="mt-8 bg-white p-6 rounded-lg shadow-md" style="display: none;">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Key Concepts: Scope & Variables</h2>
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-xl font-semibold text-pink-600">Instance Variables (on the Heap)</h3>
+                    <p class="text-gray-700">These belong to the <strong class="font-mono">Pen</strong> object itself (e.g., <code class="font-mono bg-pink-100 rounded px-1">inkLevel</code>, <code class="font-mono bg-pink-100 rounded px-1">inkColor</code>). They are created on the Heap when the object is instantiated with <code class="font-mono">new</code> and exist as long as the object exists. Their scope is the entire object; any non-static method of the class can access them.</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-blue-600">Local Variables (on the Stack)</h3>
+                    <p class="text-gray-700">These are declared inside a method (like <code class="font-mono bg-blue-100 rounded px-1">messageLength</code> inside the <code class="font-mono">write()</code> method). They are created on the Stack when the method is called and are **destroyed** when the method finishes. Their scope is limited **only** to the method in which they are declared. The <code class="font-mono">main()</code> method cannot see or access <code class="font-mono">messageLength</code>.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console and Code -->
+        <div class="grid md:grid-cols-2 gap-8 mt-8">
+            <!-- Console Output -->
+            <div>
+                <h2 class="text-xl font-bold mb-2">Console Output</h2>
+                <div id="console" class="console-output font-fira">
+                    <p class="console-line text-gray-500 italic">> Console ready...</p>
+                </div>
+            </div>
+            <!-- Java Code -->
+            <div>
+                <h2 class="text-xl font-bold mb-2">Pen.java (for reference)</h2>
+                <div class="bg-gray-800 text-gray-300 rounded-lg p-4 h-[200px] overflow-y-auto font-fira text-sm">
+<pre><code>class Pen {
+    // Instance Variables
+    int inkLevel;
+    String inkColor;
+    // ...
+
+    public void write(String message) {
+        // 'messageLength' is a LOCAL variable
+        int messageLength = message.length();
+        
+        if (isCapped) { /*...*/ }
+        
+        // uses instance variable 'inkLevel'
+        // and local variable 'messageLength'
+        inkLevel -= messageLength; 
+    }
+    // ...
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const allButtons = Array.from(document.querySelectorAll('.btn'));
+        const createBtn = document.getElementById('createBtn');
+        const capOffBtn = document.getElementById('capOffBtn');
+        const writeBtn = document.getElementById('writeBtn');
+        const changeColorBtn = document.getElementById('changeColorBtn');
+        const capOnBtn = document.getElementById('capOnBtn');
+        const nullifyBtn = document.getElementById('nullifyBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const stackContent = document.getElementById('stack-content');
+        const heapContent = document.getElementById('heap-content');
+        const consoleEl = document.getElementById('console');
+        const arrowContainer = document.getElementById('arrow-svg-container');
+        const explanationSection = document.getElementById('explanation-section');
+
+        // --- State ---
+        let penExists = false;
+        let penState = {};
+        let penRefIsNull = false;
+        let callStack = [];
+        let memoryAddress = '';
+        const METHOD_CALL_DELAY = 2500; // ms - SLOWED DOWN ANIMATION
+
+        // --- Utility Functions ---
+        function logToConsole(message, type = 'info') {
+            const line = document.createElement('p');
+            line.className = 'console-line';
+            let prefix = '> ';
+            if (type === 'system') {
+                prefix = '[SYSTEM] ';
+                line.className += ' text-yellow-400';
+            } else if (type === 'error') {
+                 prefix = '[ERROR] ';
+                 line.className += ' text-red-400';
+            }
+            line.textContent = prefix + message;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function disableAllButtons() {
+            allButtons.forEach(btn => {
+                if(btn.id !== 'resetBtn') btn.disabled = true;
+            });
+        }
+
+        function updateButtonStates() {
+            createBtn.disabled = penExists;
+            const actionButtonsDisabled = !penExists || penRefIsNull;
+            capOffBtn.disabled = actionButtonsDisabled || !penState.isCapped;
+            capOnBtn.disabled = actionButtonsDisabled || penState.isCapped;
+            writeBtn.disabled = actionButtonsDisabled;
+            changeColorBtn.disabled = actionButtonsDisabled;
+            nullifyBtn.disabled = !penExists || penRefIsNull;
+        }
+        
+        function drawArrow() {
+            clearArrow();
+            if (!penExists || penRefIsNull) return;
+            
+            const fromEl = document.getElementById('stack-ref-value');
+            const toEl = document.getElementById('heap-object');
+            
+            if (!fromEl || !toEl) return;
+
+            const fromRect = fromEl.getBoundingClientRect();
+            const toRect = toEl.getBoundingClientRect();
+            const containerRect = arrowContainer.getBoundingClientRect();
+
+            const startX = fromRect.right - containerRect.left;
+            const startY = fromRect.top + fromRect.height / 2 - containerRect.top;
+            const endX = toRect.left - containerRect.left;
+            const endY = toRect.top + toRect.height / 2 - containerRect.top;
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            svg.style.position = 'absolute';
+            svg.style.top = '0';
+            svg.style.left = '0';
+
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '7');
+            marker.setAttribute('refX', '0');
+            marker.setAttribute('refY', '3.5');
+            marker.setAttribute('orient', 'auto');
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+            polygon.setAttribute('fill', '#ec4899');
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const controlX1 = startX + (endX - startX) * 0.5;
+            const controlY1 = startY;
+            const controlX2 = startX + (endX - startX) * 0.5;
+            const controlY2 = endY;
+            
+            path.setAttribute('d', `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX-10} ${endY}`);
+            path.setAttribute('stroke', '#ec4899');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('marker-end', 'url(#arrowhead)');
+            
+            svg.appendChild(path);
+            arrowContainer.appendChild(svg);
+        }
+
+        function clearArrow() {
+            arrowContainer.innerHTML = '';
+        }
+
+        // --- Rendering Functions ---
+        function render() {
+            renderStack();
+            renderHeap();
+            updateButtonStates();
+            explanationSection.style.display = penExists ? 'block' : 'none';
+            setTimeout(drawArrow, 50);
+        }
+
+        function renderStack() {
+            if (callStack.length === 0) {
+                stackContent.innerHTML = `<p class="text-gray-500 text-center italic self-center">Stack is currently empty.</p>`;
+                return;
+            }
+
+            stackContent.innerHTML = callStack.map(frame => {
+                let content = '';
+                if (frame.name === 'main') {
+                    const refValue = penRefIsNull ? 
+                        `<span class="font-bold text-red-600">null</span>` : 
+                        `<span id="stack-ref-value" class="font-bold text-pink-600">${memoryAddress}</span>`;
+                    content = `
+                        <div class="mt-2 pl-4 border-l-2 border-blue-200">
+                            <p class="font-fira text-sm">Pen myPen = ${refValue};</p>
+                        </div>
+                    `;
+                } else if (frame.name === 'write') {
+                     content = `<div class="mt-2 pl-4 border-l-2 border-blue-200">
+                                 <p class="font-fira text-sm text-gray-700">int messageLength = <span class="font-bold text-blue-700">${frame.localVars.messageLength}</span>;</p>
+                               </div>`;
+                } else {
+                    content = `<div class="mt-2 pl-4 border-l-2 border-blue-200">
+                                 <p class="font-fira text-sm text-gray-500 italic">Executing...</p>
+                               </div>`;
+                }
+
+                return `
+                    <div class="stack-frame bg-blue-50 border-blue-200">
+                        <h3 class="font-bold text-blue-800">${frame.name}()</h3>
+                        ${content}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderHeap() {
+            if (!penExists) {
+                heapContent.innerHTML = `<p class="text-gray-500 text-center italic">Heap is currently empty.</p>`;
+                return;
+            }
+
+            const isOrphaned = penRefIsNull;
+            const orphanedClass = isOrphaned ? 'orphaned' : '';
+
+            heapContent.innerHTML = `
+                ${isOrphaned ? '<p class="text-center font-bold text-red-600 mb-2">ELIGIBLE FOR GARBAGE COLLECTION</p>' : ''}
+                <div id="heap-object" class="heap-object bg-pink-50 border-pink-200 ${orphanedClass}">
+                    <h3 class="font-bold text-pink-800">Pen Object (${memoryAddress})</h3>
+                    <div class="mt-2 pl-4 border-l-2 border-pink-200 grid grid-cols-2 gap-x-4 gap-y-1 text-sm font-fira">
+                        <span>inkLevel:</span> <span class="heap-value font-bold">${penState.inkLevel}</span>
+                        <span>inkColor:</span> <span class="heap-value font-bold">"${penState.inkColor}"</span>
+                        <span>tipType:</span> <span class="heap-value font-bold">"${penState.tipType}"</span>
+                        <span>brand:</span> <span class="heap-value font-bold">"${penState.brand}"</span>
+                        <span>isCapped:</span> <span class="heap-value font-bold">${penState.isCapped}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // --- Method Call Simulation ---
+        function simulateMethodCall(methodFrame, executionLogic) {
+            if (!penExists || penRefIsNull) return;
+            
+            disableAllButtons();
+            callStack.push(methodFrame);
+            logToConsole(`Executing: myPen.${methodFrame.name}();`);
+            logToConsole(`Pushing '${methodFrame.name}()' frame onto the call stack.`);
+            if(methodFrame.localVars) {
+                logToConsole(`Local variable 'messageLength' created within write() scope.`, 'system');
+            }
+            render();
+
+            setTimeout(() => {
+                executionLogic(); 
+                
+                callStack.pop();
+                logToConsole(`'${methodFrame.name}()' method returns, popping frame from stack.`);
+                 if(methodFrame.localVars) {
+                    logToConsole(`Local variable 'messageLength' is destroyed.`, 'system');
+                }
+                render();
+                updateButtonStates();
+            }, METHOD_CALL_DELAY);
+        }
+
+        // --- Event Handlers ---
+        createBtn.addEventListener('click', () => {
+            if (penExists) return;
+            
+            logToConsole("Executing: Pen myPen = new Pen(...);");
+            logToConsole("1. Pushing 'main()' frame onto the Stack.");
+            callStack = [{name: 'main'}];
+            memoryAddress = '@' + Math.random().toString(16).slice(2, 8);
+
+            logToConsole("2. 'new' keyword allocates memory for a Pen object on the Heap.");
+            penExists = true;
+            penRefIsNull = false;
+            penState = {
+                inkLevel: 100,
+                inkColor: "Blue",
+                tipType: "Ballpoint",
+                brand: "Pilot",
+                isCapped: true
+            };
+            
+            logToConsole(`[A new '${penState.brand}' Pen object has been created on the HEAP.]`, 'system');
+            logToConsole(`3. The memory address of the Heap object (${memoryAddress}) is assigned to 'myPen'.`);
+            render();
+        });
+
+        capOffBtn.addEventListener('click', () => {
+            simulateMethodCall({name: 'capOff'}, () => {
+                penState.isCapped = false;
+                logToConsole("Click! Uncapping the pen.", 'system');
+            });
+        });
+
+        capOnBtn.addEventListener('click', () => {
+             simulateMethodCall({name: 'capOn'}, () => {
+                penState.isCapped = true;
+                logToConsole("Click! Capping the pen.", 'system');
+            });
+        });
+
+        writeBtn.addEventListener('click', () => {
+            const message = "Hello";
+            const messageLength = message.length;
+            const methodFrame = {
+                name: 'write',
+                localVars: { messageLength: messageLength }
+            };
+
+            simulateMethodCall(methodFrame, () => {
+                if (penState.isCapped) {
+                    logToConsole("Can't write. The cap is on!", 'error');
+                    return;
+                }
+                if (penState.inkLevel <= 0) {
+                    logToConsole("Can't write. The pen is out of ink!", 'error');
+                    return;
+                }
+                
+                // BUG FIX: Use the local variable to change the instance variable correctly.
+                penState.inkLevel -= messageLength; 
+                if (penState.inkLevel < 0) penState.inkLevel = 0;
+                
+                logToConsole(`Writing: '${message}' with the ${penState.inkColor} pen.`, 'system');
+                logToConsole(`Ink level (instance variable) is now: ${penState.inkLevel}%`, 'system');
+            });
+        });
+
+        changeColorBtn.addEventListener('click', () => {
+            simulateMethodCall({name: 'changeColor'}, () => {
+                const newColor = penState.inkColor === "Blue" ? "Red" : "Blue";
+                logToConsole(`Changing color from ${penState.inkColor} to ${newColor}.`, 'system');
+                penState.inkColor = newColor;
+            });
+        });
+
+        nullifyBtn.addEventListener('click', () => {
+            if (!penExists || penRefIsNull) return;
+            logToConsole("Executing: myPen = null;");
+            penRefIsNull = true;
+            logToConsole("The 'myPen' reference on the Stack now points to null.", 'system');
+            logToConsole("The Pen object on the Heap is now 'orphaned' and can be garbage collected.", 'system');
+            clearArrow();
+            render();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            penExists = false;
+            penRefIsNull = false;
+            penState = {};
+            callStack = [];
+            consoleEl.innerHTML = '<p class="console-line text-gray-500 italic">> Console ready...</p>';
+            clearArrow();
+            render();
+        });
+        
+        // --- Initial Render ---
+        window.addEventListener('resize', drawArrow);
+        render();
+
+    </script>
+</body>
+</html>

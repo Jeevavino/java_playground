@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tight vs Loose Coupling Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .demo-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .coupling-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .tight-coupling .card-header h2 {
+            color: #e74c3c;
+        }
+
+        .loose-coupling .card-header h2 {
+            color: #27ae60;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .add-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .publish-btn {
+            background: #f39c12;
+            color: white;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .publish-btn:hover {
+            background: #e67e22;
+            transform: translateY(-2px);
+        }
+
+        .news-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .subscriber-list {
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            min-height: 80px;
+        }
+
+        .subscriber-item {
+            background: white;
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .remove-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 3px 8px;
+            font-size: 12px;
+        }
+
+        .remove-btn:hover {
+            background: #c0392b;
+        }
+
+        .comparison {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+        .comparison h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .comparison-item {
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .tight-issues {
+            background: #ffebee;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .loose-benefits {
+            background: #e8f5e8;
+            border-left: 4px solid #27ae60;
+        }
+
+        .comparison-item h4 {
+            margin-bottom: 10px;
+        }
+
+        .comparison-item ul {
+            margin-left: 20px;
+        }
+
+        .comparison-item li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .demo-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Tight vs Loose Coupling Demo</h1>
+            <p>Interactive demonstration of coupling principles in software design</p>
+        </div>
+
+        <div class="demo-section">
+            <!-- Tight Coupling -->
+            <div class="coupling-card tight-coupling">
+                <div class="card-header">
+                    <h2>🔒 Tight Coupling (Bad)</h2>
+                    <p>Newspaper knows specific subscriber types</p>
+                </div>
+
+                <div class="controls">
+                    <div class="input-group">
+                        <input type="text" id="tightEmail" placeholder="Email address" value="john@email.com">
+                        <button class="add-btn" onclick="addTightEmailSubscriber()">Add Email</button>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="tightSMS" placeholder="Phone number" value="+1234567890">
+                        <button class="add-btn" onclick="addTightSMSSubscriber()">Add SMS</button>
+                    </div>
+                </div>
+
+                <div class="subscriber-list" id="tightSubscribers">
+                    <strong>Subscribers:</strong>
+                </div>
+
+                <input type="text" class="news-input" id="tightNews" placeholder="Enter news to publish..." value="Breaking: New tech breakthrough!">
+                <button class="publish-btn" onclick="publishTightNews()">Publish News</button>
+
+                <div class="output" id="tightOutput"></div>
+            </div>
+
+            <!-- Loose Coupling -->
+            <div class="coupling-card loose-coupling">
+                <div class="card-header">
+                    <h2>🔓 Loose Coupling (Good)</h2>
+                    <p>Newspaper uses Observer interface</p>
+                </div>
+
+                <div class="controls">
+                    <div class="input-group">
+                        <input type="text" id="looseEmail" placeholder="Email address" value="jane@email.com">
+                        <button class="add-btn" onclick="addLooseSubscriber('email')">Add Email</button>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="looseSMS" placeholder="Phone number" value="+9876543210">
+                        <button class="add-btn" onclick="addLooseSubscriber('sms')">Add SMS</button>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="loosePush" placeholder="Device ID" value="device123">
+                        <button class="add-btn" onclick="addLooseSubscriber('push')">Add Push</button>
+                    </div>
+                </div>
+
+                <div class="subscriber-list" id="looseSubscribers">
+                    <strong>Observers:</strong>
+                </div>
+
+                <input type="text" class="news-input" id="looseNews" placeholder="Enter news to publish..." value="Breaking: New tech breakthrough!">
+                <button class="publish-btn" onclick="publishLooseNews()">Publish News</button>
+
+                <div class="output" id="looseOutput"></div>
+            </div>
+        </div>
+
+        <div class="comparison">
+            <h3>Key Differences</h3>
+            <div class="comparison-grid">
+                <div class="comparison-item tight-issues">
+                    <h4>❌ Tight Coupling Issues</h4>
+                    <ul>
+                        <li>Newspaper must know each subscriber type</li>
+                        <li>Separate methods for each type</li>
+                        <li>Hard to add new subscriber types</li>
+                        <li>Violates Open/Closed Principle</li>
+                        <li>High dependencies between classes</li>
+                    </ul>
+                </div>
+                <div class="comparison-item loose-benefits">
+                    <h4>✅ Loose Coupling Benefits</h4>
+                    <ul>
+                        <li>Newspaper only knows Observer interface</li>
+                        <li>Single method for all subscriber types</li>
+                        <li>Easy to add new subscriber types</li>
+                        <li>Follows Open/Closed Principle</li>
+                        <li>Low coupling, high cohesion</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tight Coupling Implementation
+        class EmailSubscriber {
+            constructor(email) {
+                this.email = email;
+            }
+            
+            receiveNews(news) {
+                return `Email to ${this.email}: ${news}`;
+            }
+        }
+
+        class SMSSubscriber {
+            constructor(phone) {
+                this.phone = phone;
+            }
+            
+            receiveNews(news) {
+                return `SMS to ${this.phone}: ${news}`;
+            }
+        }
+
+        class TightNewspaper {
+            constructor() {
+                this.emailSubscribers = [];
+                this.smsSubscribers = [];
+            }
+            
+            addEmailSubscriber(subscriber) {
+                this.emailSubscribers.push(subscriber);
+            }
+            
+            addSMSSubscriber(subscriber) {
+                this.smsSubscribers.push(subscriber);
+            }
+            
+            removeEmailSubscriber(index) {
+                this.emailSubscribers.splice(index, 1);
+            }
+            
+            removeSMSSubscriber(index) {
+                this.smsSubscribers.splice(index, 1);
+            }
+            
+            publishNews(news) {
+                const results = [];
+                results.push(`Publishing: ${news}`);
+                
+                this.emailSubscribers.forEach(sub => {
+                    results.push(sub.receiveNews(news));
+                });
+                
+                this.smsSubscribers.forEach(sub => {
+                    results.push(sub.receiveNews(news));
+                });
+                
+                return results;
+            }
+        }
+
+        // Loose Coupling Implementation
+        class Observer {
+            update(news) {
+                throw new Error("Must implement update method");
+            }
+        }
+
+        class EmailObserver extends Observer {
+            constructor(email) {
+                super();
+                this.email = email;
+                this.type = 'Email';
+            }
+            
+            update(news) {
+                return `Email to ${this.email}: ${news}`;
+            }
+        }
+
+        class SMSObserver extends Observer {
+            constructor(phone) {
+                super();
+                this.phone = phone;
+                this.type = 'SMS';
+            }
+            
+            update(news) {
+                return `SMS to ${this.phone}: ${news}`;
+            }
+        }
+
+        class PushObserver extends Observer {
+            constructor(deviceId) {
+                super();
+                this.deviceId = deviceId;
+                this.type = 'Push';
+            }
+            
+            update(news) {
+                return `Push to device ${this.deviceId}: ${news}`;
+            }
+        }
+
+        class LooseNewspaper {
+            constructor() {
+                this.observers = [];
+            }
+            
+            addObserver(observer) {
+                this.observers.push(observer);
+            }
+            
+            removeObserver(index) {
+                this.observers.splice(index, 1);
+            }
+            
+            publishNews(news) {
+                const results = [];
+                results.push(`Publishing: ${news}`);
+                
+                this.observers.forEach(observer => {
+                    results.push(observer.update(news));
+                });
+                
+                return results;
+            }
+        }
+
+        // Global instances
+        const tightNewspaper = new TightNewspaper();
+        const looseNewspaper = new LooseNewspaper();
+
+        // Tight coupling functions
+        function addTightEmailSubscriber() {
+            const email = document.getElementById('tightEmail').value.trim();
+            if (email) {
+                const subscriber = new EmailSubscriber(email);
+                tightNewspaper.addEmailSubscriber(subscriber);
+                updateTightSubscriberList();
+                document.getElementById('tightEmail').value = '';
+            }
+        }
+
+        function addTightSMSSubscriber() {
+            const phone = document.getElementById('tightSMS').value.trim();
+            if (phone) {
+                const subscriber = new SMSSubscriber(phone);
+                tightNewspaper.addSMSSubscriber(subscriber);
+                updateTightSubscriberList();
+                document.getElementById('tightSMS').value = '';
+            }
+        }
+
+        function updateTightSubscriberList() {
+            const container = document.getElementById('tightSubscribers');
+            container.innerHTML = '<strong>Subscribers:</strong>';
+            
+            tightNewspaper.emailSubscribers.forEach((sub, index) => {
+                const div = document.createElement('div');
+                div.className = 'subscriber-item';
+                div.innerHTML = `
+                    <span>📧 ${sub.email}</span>
+                    <button class="remove-btn" onclick="removeTightEmailSubscriber(${index})">Remove</button>
+                `;
+                container.appendChild(div);
+            });
+            
+            tightNewspaper.smsSubscribers.forEach((sub, index) => {
+                const div = document.createElement('div');
+                div.className = 'subscriber-item';
+                div.innerHTML = `
+                    <span>📱 ${sub.phone}</span>
+                    <button class="remove-btn" onclick="removeTightSMSSubscriber(${index})">Remove</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function removeTightEmailSubscriber(index) {
+            tightNewspaper.removeEmailSubscriber(index);
+            updateTightSubscriberList();
+        }
+
+        function removeTightSMSSubscriber(index) {
+            tightNewspaper.removeSMSSubscriber(index);
+            updateTightSubscriberList();
+        }
+
+        function publishTightNews() {
+            const news = document.getElementById('tightNews').value.trim();
+            if (news) {
+                const results = tightNewspaper.publishNews(news);
+                const output = document.getElementById('tightOutput');
+                output.innerHTML = results.join('\n');
+                output.scrollTop = output.scrollHeight;
+            }
+        }
+
+        // Loose coupling functions
+        function addLooseSubscriber(type) {
+            let observer;
+            let inputId;
+            
+            switch(type) {
+                case 'email':
+                    inputId = 'looseEmail';
+                    const email = document.getElementById(inputId).value.trim();
+                    if (email) observer = new EmailObserver(email);
+                    break;
+                case 'sms':
+                    inputId = 'looseSMS';
+                    const phone = document.getElementById(inputId).value.trim();
+                    if (phone) observer = new SMSObserver(phone);
+                    break;
+                case 'push':
+                    inputId = 'loosePush';
+                    const deviceId = document.getElementById(inputId).value.trim();
+                    if (deviceId) observer = new PushObserver(deviceId);
+                    break;
+            }
+            
+            if (observer) {
+                looseNewspaper.addObserver(observer);
+                updateLooseSubscriberList();
+                document.getElementById(inputId).value = '';
+            }
+        }
+
+        function updateLooseSubscriberList() {
+            const container = document.getElementById('looseSubscribers');
+            container.innerHTML = '<strong>Observers:</strong>';
+            
+            looseNewspaper.observers.forEach((observer, index) => {
+                const div = document.createElement('div');
+                div.className = 'subscriber-item';
+                let icon = observer.type === 'Email' ? '📧' : observer.type === 'SMS' ? '📱' : '🔔';
+                let identifier = observer.email || observer.phone || observer.deviceId;
+                
+                div.innerHTML = `
+                    <span>${icon} ${identifier}</span>
+                    <button class="remove-btn" onclick="removeLooseSubscriber(${index})">Remove</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function removeLooseSubscriber(index) {
+            looseNewspaper.removeObserver(index);
+            updateLooseSubscriberList();
+        }
+
+        function publishLooseNews() {
+            const news = document.getElementById('looseNews').value.trim();
+            if (news) {
+                const results = looseNewspaper.publishNews(news);
+                const output = document.getElementById('looseOutput');
+                output.innerHTML = results.join('\n');
+                output.scrollTop = output.scrollHeight;
+            }
+        }
+
+        // Initialize with some default subscribers
+        window.onload = function() {
+            // Add default tight coupling subscribers
+            tightNewspaper.addEmailSubscriber(new EmailSubscriber('default@email.com'));
+            tightNewspaper.addSMSSubscriber(new SMSSubscriber('+1111111111'));
+            updateTightSubscriberList();
+            
+            // Add default loose coupling observers
+            looseNewspaper.addObserver(new EmailObserver('observer@email.com'));
+            looseNewspaper.addObserver(new SMSObserver('+2222222222'));
+            updateLooseSubscriberList();
+        };
+    </script>
+</body>
+</html>

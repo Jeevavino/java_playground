@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Complexity Visualizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        canvas {
+            width: 100%;
+            height: 400px;
+        }
+        label {
+            display: inline-block;
+            margin-right: 15px;
+            margin-bottom: 10px;
+        }
+        input[type="range"] {
+            vertical-align: middle;
+        }
+        .complexity-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7fe;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Time Complexity Visualizer</h1>
+    
+    <div class="controls">
+        <label>
+            Max n value:
+            <input type="range" id="nRange" min="1" max="20" value="10">
+            <span id="nValue">10</span>
+        </label>
+        <br>
+        <label><input type="checkbox" id="constant" checked> O(1) - Constant</label>
+        <label><input type="checkbox" id="logarithmic" checked> O(log n) - Logarithmic</label>
+        <label><input type="checkbox" id="linear" checked> O(n) - Linear</label>
+        <label><input type="checkbox" id="linearithmic" checked> O(n log n) - Linearithmic</label>
+        <label><input type="checkbox" id="quadratic" checked> O(n²) - Quadratic</label>
+        <label><input type="checkbox" id="cubic" checked> O(n³) - Cubic</label>
+        <label><input type="checkbox" id="exponential" checked> O(2ⁿ) - Exponential</label>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="complexityChart"></canvas>
+    </div>
+    
+    <div class="complexity-info">
+        <h3>Time Complexity Explanations:</h3>
+        <ul>
+            <li><strong>O(1) - Constant:</strong> Runtime doesn't change with input size (e.g., array index access)</li>
+            <li><strong>O(log n) - Logarithmic:</strong> Runtime grows logarithmically with input size (e.g., binary search)</li>
+            <li><strong>O(n) - Linear:</strong> Runtime grows linearly with input size (e.g., simple loop)</li>
+            <li><strong>O(n log n) - Linearithmic:</strong> Runtime grows in proportion to n log n (e.g., efficient sorting algorithms)</li>
+            <li><strong>O(n²) - Quadratic:</strong> Runtime grows with the square of input size (e.g., nested loops)</li>
+            <li><strong>O(n³) - Cubic:</strong> Runtime grows with the cube of input size (e.g., triple nested loops)</li>
+            <li><strong>O(2ⁿ) - Exponential:</strong> Runtime doubles with each additional input (e.g., naive recursive Fibonacci)</li>
+        </ul>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nRange = document.getElementById('nRange');
+            const nValue = document.getElementById('nValue');
+            const checkboxes = {
+                constant: document.getElementById('constant'),
+                logarithmic: document.getElementById('logarithmic'),
+                linear: document.getElementById('linear'),
+                linearithmic: document.getElementById('linearithmic'),
+                quadratic: document.getElementById('quadratic'),
+                cubic: document.getElementById('cubic'),
+                exponential: document.getElementById('exponential')
+            };
+            
+            // Initialize chart
+            const ctx = document.getElementById('complexityChart').getContext('2d');
+            let complexityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Relative Time Complexity'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Input Size (n)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Time Complexity Growth Rates'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update chart when controls change
+            function updateChart() {
+                const maxN = parseInt(nRange.value);
+                nValue.textContent = maxN;
+                
+                // Generate labels from 1 to maxN
+                const labels = Array.from({length: maxN}, (_, i) => i + 1);
+                
+                // Calculate complexity values
+                const datasets = [];
+                
+                if (checkboxes.constant.checked) {
+                    datasets.push({
+                        label: 'O(1) - Constant',
+                        data: labels.map(n => 1),
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                        tension: 0.1
+                    });
+                }
+                
+                if (checkboxes.logarithmic.checked) {
+                    datasets.push({
+                        label: 'O(log n) - Logarithmic',
+                        data: labels.map(n => Math.log2(n)),
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        tension: 0.1
+                    });
+                }
+                
+                if (checkboxes.linear.checked) {
+                    datasets.push({
+                        label: 'O(n) - Linear',
+                        data: labels.map(n => n),
+                        borderColor: 'rgb(255, 159, 64)',
+                        backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                        tension: 0.1
+                    });
+                }
+                
+                if (checkboxes.linearithmic.checked) {
+                    datasets.push({
+                        label: 'O(n log n) - Linearithmic',
+                        data: labels.map(n => n * Math.log2(n)),
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        tension: 0.1
+                    });
+                }
+                
+                if (checkboxes.quadratic.checked) {
+                    datasets.push({
+                        label: 'O(n²) - Quadratic',
+                        data: labels.map(n => n * n),
+                        borderColor: 'rgb(153, 102, 255)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                        tension: 0.1
+                    });
+                }
+                
+                if (checkboxes.cubic.checked) {
+                    datasets.push({
+                        label: 'O(n³) - Cubic',
+                        data: labels.map(n => n * n * n),
+                        borderColor: 'rgb(255, 205, 86)',
+                        backgroundColor: 'rgba(255, 205, 86, 0.5)',
+                        tension: 0.1
+                    });
+                }
+                
+                if (checkboxes.exponential.checked) {
+                    datasets.push({
+                        label: 'O(2ⁿ) - Exponential',
+                        data: labels.map(n => Math.pow(2, n)),
+                        borderColor: 'rgb(201, 203, 207)',
+                        backgroundColor: 'rgba(201, 203, 207, 0.5)',
+                        tension: 0.1
+                    });
+                }
+                
+                // Update chart data
+                complexityChart.data.labels = labels;
+                complexityChart.data.datasets = datasets;
+                complexityChart.update();
+            }
+            
+            // Add event listeners
+            nRange.addEventListener('input', updateChart);
+            Object.values(checkboxes).forEach(checkbox => {
+                checkbox.addEventListener('change', updateChart);
+            });
+            
+            // Initial chart update
+            updateChart();
+        });
+    </script>
+</body>
+</html>

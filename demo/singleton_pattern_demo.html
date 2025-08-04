@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singleton Pattern Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .demo-section {
+            margin: 30px 0;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .demo-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .regular-class {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            border-color: #ff6b6b;
+        }
+
+        .traditional-singleton {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-color: #4ecdc4;
+        }
+
+        .enum-singleton {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-color: #f39c12;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .create-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .connect-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .status-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .clear-btn {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            min-height: 150px;
+            margin-top: 20px;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .output-line {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 5px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .success {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid #2ecc71;
+        }
+
+        .warning {
+            background: rgba(241, 196, 15, 0.2);
+            border-left: 4px solid #f1c40f;
+        }
+
+        .info {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 4px solid #3498db;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .instance-counter {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Singleton Pattern Demo</h1>
+        
+        <!-- Regular Class Section -->
+        <div class="demo-section regular-class">
+            <div class="section-title">
+                <span class="emoji">❌</span>
+                PROBLEM - Regular Class (Multiple Instances)
+                <span class="instance-counter" id="regularCounter">Instances: 0</span>
+            </div>
+            <div class="button-group">
+                <button class="create-btn" onclick="createRegularInstance()">Create New Instance</button>
+                <button class="connect-btn" onclick="connectRegular()">Connect Last Instance</button>
+                <button class="status-btn" onclick="checkRegularStatus()">Check All Status</button>
+                <button class="clear-btn" onclick="clearRegular()">Clear All</button>
+            </div>
+            <div class="output" id="regularOutput"></div>
+        </div>
+
+        <!-- Traditional Singleton Section -->
+        <div class="demo-section traditional-singleton">
+            <div class="section-title">
+                <span class="emoji">✅</span>
+                SOLUTION 1 - Traditional Singleton
+                <span class="instance-counter" id="traditionalCounter">Instances: 0</span>
+            </div>
+            <div class="button-group">
+                <button class="create-btn" onclick="getTraditionalInstance()">Get Instance</button>
+                <button class="connect-btn" onclick="connectTraditional()">Connect</button>
+                <button class="status-btn" onclick="checkTraditionalStatus()">Check Status</button>
+                <button class="clear-btn" onclick="clearTraditional()">Reset</button>
+            </div>
+            <div class="output" id="traditionalOutput"></div>
+        </div>
+
+        <!-- Enum Singleton Section -->
+        <div class="demo-section enum-singleton">
+            <div class="section-title">
+                <span class="emoji">🏆</span>
+                SOLUTION 2 - Enum Singleton (Best Practice)
+                <span class="instance-counter" id="enumCounter">Instances: 0</span>
+            </div>
+            <div class="button-group">
+                <button class="create-btn" onclick="getEnumInstance()">Get Instance</button>
+                <button class="connect-btn" onclick="connectEnum()">Connect</button>
+                <button class="status-btn" onclick="checkEnumStatus()">Check Status</button>
+                <button class="clear-btn" onclick="clearEnum()">Reset</button>
+            </div>
+            <div class="output" id="enumOutput"></div>
+        </div>
+
+        <!-- Comparison Table -->
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Pattern Type</th>
+                    <th>Instances Created</th>
+                    <th>Memory Usage</th>
+                    <th>Thread Safety</th>
+                    <th>Best For</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>❌ Regular Class</td>
+                    <td>Multiple (wasteful)</td>
+                    <td>High</td>
+                    <td>Not applicable</td>
+                    <td>General objects</td>
+                </tr>
+                <tr>
+                    <td>✅ Traditional Singleton</td>
+                    <td>Exactly one</td>
+                    <td>Low</td>
+                    <td>Requires synchronization</td>
+                    <td>Legacy systems</td>
+                </tr>
+                <tr>
+                    <td>🏆 Enum Singleton</td>
+                    <td>Exactly one</td>
+                    <td>Low</td>
+                    <td>Built-in thread safety</td>
+                    <td>Modern applications</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Regular Class Implementation
+        class DatabaseConnection {
+            constructor() {
+                this.connectionId = `DB_${Math.floor(Math.random() * 1000)}`;
+                this.isConnected = false;
+                this.createdAt = new Date().toLocaleTimeString();
+            }
+
+            connect() {
+                this.isConnected = true;
+            }
+
+            getStatus() {
+                return `${this.connectionId} - ${this.isConnected ? 'CONNECTED' : 'DISCONNECTED'} (Created: ${this.createdAt})`;
+            }
+        }
+
+        // Traditional Singleton Implementation
+        class DatabaseSingleton {
+            constructor() {
+                this.connectionId = `SINGLETON_DB_${Math.floor(Math.random() * 1000)}`;
+                this.isConnected = false;
+                this.createdAt = new Date().toLocaleTimeString();
+            }
+
+            static getInstance() {
+                if (!DatabaseSingleton.instance) {
+                    DatabaseSingleton.instance = new DatabaseSingleton();
+                    return DatabaseSingleton.instance;
+                }
+                return DatabaseSingleton.instance;
+            }
+
+            connect() {
+                this.isConnected = true;
+            }
+
+            getStatus() {
+                return `${this.connectionId} - ${this.isConnected ? 'CONNECTED' : 'DISCONNECTED'} (Created: ${this.createdAt})`;
+            }
+        }
+
+        // Enum-like Singleton Implementation
+        const DatabaseEnum = {
+            INSTANCE: null,
+            getInstance() {
+                if (!this.INSTANCE) {
+                    this.INSTANCE = {
+                        connectionId: `ENUM_DB_${Math.floor(Math.random() * 1000)}`,
+                        isConnected: false,
+                        createdAt: new Date().toLocaleTimeString(),
+                        connect() {
+                            this.isConnected = true;
+                        },
+                        getStatus() {
+                            return `${this.connectionId} - ${this.isConnected ? 'CONNECTED' : 'DISCONNECTED'} (Created: ${this.createdAt})`;
+                        }
+                    };
+                }
+                return this.INSTANCE;
+            }
+        };
+
+        // State management
+        let regularInstances = [];
+        let traditionalInstanceCount = 0;
+        let enumInstanceCount = 0;
+
+        // Utility functions
+        function addOutput(elementId, message, type = 'info') {
+            const output = document.getElementById(elementId);
+            const line = document.createElement('div');
+            line.className = `output-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateCounter(counterId, count) {
+            document.getElementById(counterId).textContent = `Instances: ${count}`;
+        }
+
+        // Regular Class Functions
+        function createRegularInstance() {
+            const instance = new DatabaseConnection();
+            regularInstances.push(instance);
+            updateCounter('regularCounter', regularInstances.length);
+            addOutput('regularOutput', `❌ New DatabaseConnection created: ${instance.connectionId}`, 'warning');
+        }
+
+        function connectRegular() {
+            if (regularInstances.length === 0) {
+                addOutput('regularOutput', '⚠️ No instances created yet!', 'warning');
+                return;
+            }
+            const lastInstance = regularInstances[regularInstances.length - 1];
+            lastInstance.connect();
+            addOutput('regularOutput', `🔌 Connected: ${lastInstance.connectionId}`, 'success');
+        }
+
+        function checkRegularStatus() {
+            if (regularInstances.length === 0) {
+                addOutput('regularOutput', '⚠️ No instances to check!', 'warning');
+                return;
+            }
+            addOutput('regularOutput', `📊 Checking ${regularInstances.length} instances:`, 'info');
+            regularInstances.forEach((instance, index) => {
+                addOutput('regularOutput', `   Instance ${index + 1}: ${instance.getStatus()}`, 'info');
+            });
+            addOutput('regularOutput', `🔍 All instances are DIFFERENT objects: ${regularInstances.length > 1 ? 'TRUE' : 'N/A'}`, 'warning');
+        }
+
+        function clearRegular() {
+            regularInstances = [];
+            updateCounter('regularCounter', 0);
+            document.getElementById('regularOutput').innerHTML = '';
+            addOutput('regularOutput', '🗑️ All regular instances cleared', 'info');
+        }
+
+        // Traditional Singleton Functions
+        function getTraditionalInstance() {
+            const instance = DatabaseSingleton.getInstance();
+            if (traditionalInstanceCount === 0) {
+                traditionalInstanceCount = 1;
+                updateCounter('traditionalCounter', traditionalInstanceCount);
+                addOutput('traditionalOutput', `✅ Singleton DatabaseConnection created: ${instance.connectionId}`, 'success');
+            } else {
+                addOutput('traditionalOutput', `♻️ Returning existing singleton: ${instance.connectionId}`, 'info');
+            }
+        }
+
+        function connectTraditional() {
+            if (traditionalInstanceCount === 0) {
+                addOutput('traditionalOutput', '⚠️ Get instance first!', 'warning');
+                return;
+            }
+            const instance = DatabaseSingleton.getInstance();
+            instance.connect();
+            addOutput('traditionalOutput', `🔌 Singleton connected: ${instance.connectionId}`, 'success');
+        }
+
+        function checkTraditionalStatus() {
+            if (traditionalInstanceCount === 0) {
+                addOutput('traditionalOutput', '⚠️ No instance created yet!', 'warning');
+                return;
+            }
+            const instance = DatabaseSingleton.getInstance();
+            addOutput('traditionalOutput', `📊 Singleton status: ${instance.getStatus()}`, 'info');
+            addOutput('traditionalOutput', '🔍 Same instance returned every time: TRUE', 'success');
+        }
+
+        function clearTraditional() {
+            DatabaseSingleton.instance = null;
+            traditionalInstanceCount = 0;
+            updateCounter('traditionalCounter', 0);
+            document.getElementById('traditionalOutput').innerHTML = '';
+            addOutput('traditionalOutput', '🗑️ Singleton reset', 'info');
+        }
+
+        // Enum Singleton Functions
+        function getEnumInstance() {
+            const instance = DatabaseEnum.getInstance();
+            if (enumInstanceCount === 0) {
+                enumInstanceCount = 1;
+                updateCounter('enumCounter', enumInstanceCount);
+                addOutput('enumOutput', `🏆 Enum Singleton created: ${instance.connectionId}`, 'success');
+            } else {
+                addOutput('enumOutput', `♻️ Returning existing enum singleton: ${instance.connectionId}`, 'info');
+            }
+        }
+
+        function connectEnum() {
+            if (enumInstanceCount === 0) {
+                addOutput('enumOutput', '⚠️ Get instance first!', 'warning');
+                return;
+            }
+            const instance = DatabaseEnum.getInstance();
+            instance.connect();
+            addOutput('enumOutput', `🔌 Enum singleton connected: ${instance.connectionId}`, 'success');
+        }
+
+        function checkEnumStatus() {
+            if (enumInstanceCount === 0) {
+                addOutput('enumOutput', '⚠️ No instance created yet!', 'warning');
+                return;
+            }
+            const instance = DatabaseEnum.getInstance();
+            addOutput('enumOutput', `📊 Enum singleton status: ${instance.getStatus()}`, 'info');
+            addOutput('enumOutput', '🔍 Thread-safe and serialization-safe by design: TRUE', 'success');
+        }
+
+        function clearEnum() {
+            DatabaseEnum.INSTANCE = null;
+            enumInstanceCount = 0;
+            updateCounter('enumCounter', 0);
+            document.getElementById('enumOutput').innerHTML = '';
+            addOutput('enumOutput', '🗑️ Enum singleton reset', 'info');
+        }
+
+        // Initialize demo
+        document.addEventListener('DOMContentLoaded', function() {
+            addOutput('regularOutput', '🚀 Regular class demo ready - Click "Create New Instance" to start', 'info');
+            addOutput('traditionalOutput', '🚀 Traditional singleton demo ready - Click "Get Instance" to start', 'info');
+            addOutput('enumOutput', '🚀 Enum singleton demo ready - Click "Get Instance" to start', 'info');
+        });
+    </script>
+</body>
+</html>

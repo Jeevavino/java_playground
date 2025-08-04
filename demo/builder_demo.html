@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Builder Pattern Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-block {
+            font-family: 'Fira Code', monospace;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Interactive Builder Pattern Demo</h1>
+            <p class="mt-2 text-lg text-gray-600">Visually construct an object step-by-step.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Left Column: Builder Controls -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-semibold mb-4 border-b pb-3">Car Factory</h2>
+                <p class="mb-6 text-gray-600">Select the components for your car. The builder will assemble it for you.</p>
+
+                <div class="space-y-6">
+                    <!-- Engine Selection -->
+                    <div>
+                        <label for="engine-select" class="block text-sm font-medium text-gray-700 mb-1">1. Select Engine</label>
+                        <select id="engine-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
+                            <option value="V8 Turbo">V8 Turbo</option>
+                            <option value="Electric Motor">Electric Motor</option>
+                            <option value="Diesel V6">Diesel V6</option>
+                            <option value="4-Cylinder">4-Cylinder</option>
+                            <option value="Hybrid Engine">Hybrid Engine</option>
+                        </select>
+                    </div>
+
+                    <!-- Wheels Selection -->
+                    <div>
+                        <label for="wheels-select" class="block text-sm font-medium text-gray-700 mb-1">2. Select Wheels</label>
+                        <select id="wheels-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
+                            <option value="Alloy Racing Wheels">Alloy Racing Wheels</option>
+                            <option value="Eco-Friendly Wheels">Eco-Friendly Wheels</option>
+                            <option value="Heavy Duty Tires">Heavy Duty Tires</option>
+                            <option value="Standard Wheels">Standard Wheels</option>
+                            <option value="All-Terrain Wheels">All-Terrain Wheels</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Build Button -->
+                <div class="mt-8 text-center">
+                    <button id="build-button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                        Build Car
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Output -->
+            <div class="bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-700">
+                <h2 class="text-2xl font-semibold text-white mb-4 border-b border-gray-600 pb-3">Construction Log</h2>
+                
+                <!-- Generated Code Display -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-400 mb-2">Generated Code:</h3>
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <pre><code id="code-output" class="code-block text-sm text-cyan-300 whitespace-pre-wrap">
+// Click "Build Car" to see the code...
+                        </code></pre>
+                    </div>
+                </div>
+
+                <!-- Resulting Object Display -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-medium text-gray-400 mb-2">Resulting Object:</h3>
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <pre><code id="object-output" class="code-block text-sm text-emerald-300 whitespace-pre-wrap">
+// Your built car will appear here...
+                        </code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explanation Section -->
+        <div class="mt-8 bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+            <h2 class="text-2xl font-semibold mb-4">How It Works (JavaScript Implementation)</h2>
+            <p class="mb-4 text-gray-600">This demo uses JavaScript classes to simulate the Java Builder Pattern. The key ideas are:</p>
+            <ul class="list-disc list-inside space-y-2 text-gray-700">
+                <li>The <strong>Car class</strong> has a private constructor, so it can only be instantiated by its trusted friend, the <strong>Builder</strong>.</li>
+                <li>The <strong>Builder class</strong> has methods (e.g., <code class="code-block text-xs bg-gray-200 p-1 rounded">setEngine()</code>) that collect the configuration details.</li>
+                <li>Each builder method returns <code class="code-block text-xs bg-gray-200 p-1 rounded">this</code>, allowing for a fluent, chainable API.</li>
+                <li>The final <code class="code-block text-xs bg-gray-200 p-1 rounded">build()</code> method calls the private Car constructor, passes itself as an argument, and returns the final, immutable Car object.</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+        // --- JavaScript implementation of the Builder Pattern ---
+
+        // The main 'Car' class.
+        // In JavaScript, we can't have a truly private constructor like in Java.
+        // Instead, we use a convention: the constructor accepts a 'builder' object.
+        class Car {
+            constructor(builder) {
+                this.engine = builder.engine;
+                this.wheels = builder.wheels;
+            }
+
+            // A method to display the car's properties.
+            toString() {
+                return `Car { engine: '${this.engine}', wheels: '${this.wheels}' }`;
+            }
+        }
+
+        // The static nested 'Builder' class.
+        Car.Builder = class {
+            constructor() {
+                // Initialize with default or empty values
+                this.engine = null;
+                this.wheels = null;
+            }
+
+            // Builder method for setting the engine.
+            // It returns 'this' to allow for method chaining.
+            setEngine(engine) {
+                this.engine = engine;
+                return this;
+            }
+
+            // Builder method for setting the wheels.
+            // It also returns 'this' for chaining.
+            setWheels(wheels) {
+                this.wheels = wheels;
+                return this;
+            }
+
+            // The final build method.
+            // It creates and returns a new Car instance using the builder's state.
+            build() {
+                if (!this.engine) {
+                    throw new Error("Engine is a required part to build a car.");
+                }
+                return new Car(this);
+            }
+        }
+
+        // --- Interactive Demo Logic ---
+
+        const engineSelect = document.getElementById('engine-select');
+        const wheelsSelect = document.getElementById('wheels-select');
+        const buildButton = document.getElementById('build-button');
+        const codeOutput = document.getElementById('code-output');
+        const objectOutput = document.getElementById('object-output');
+
+        buildButton.addEventListener('click', () => {
+            const selectedEngine = engineSelect.value;
+            const selectedWheels = wheelsSelect.value;
+
+            // 1. Generate the code string for display
+            const codeString = `// 1. Create a new builder instance
+const carBuilder = new Car.Builder();
+
+// 2. Set properties using the fluent API
+carBuilder
+  .setEngine("${selectedEngine}")
+  .setWheels("${selectedWheels}");
+
+// 3. Build the final, immutable object
+const myCar = carBuilder.build();`;
+
+            codeOutput.textContent = codeString;
+
+            // 2. Actually execute the builder pattern
+            try {
+                const myCar = new Car.Builder()
+                    .setEngine(selectedEngine)
+                    .setWheels(selectedWheels)
+                    .build();
+                
+                // 3. Display the resulting object
+                objectOutput.textContent = myCar.toString();
+
+            } catch (error) {
+                objectOutput.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+
+</body>
+</html>

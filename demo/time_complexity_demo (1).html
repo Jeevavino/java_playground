@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Complexity Demonstration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 2.5em;
+        }
+        
+        .controls {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        label {
+            font-weight: 600;
+            min-width: 100px;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            min-width: 200px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 5px;
+            outline: none;
+            appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        
+        .n-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffd700;
+            min-width: 50px;
+        }
+        
+        .algorithms {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .algorithm-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .algorithm-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .algorithm-title {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            color: #ffd700;
+        }
+        
+        .complexity-notation {
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        
+        .operations-count {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        
+        .execution-time {
+            font-size: 0.9em;
+            color: #ffcccb;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #ffd700, #ff6b6b);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .chart-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-top: 20px;
+        }
+        
+        .chart {
+            width: 100%;
+            height: 400px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .run-button {
+            background: linear-gradient(45deg, #ff6b6b, #ffd700);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .run-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .run-button:active {
+            transform: translateY(0);
+        }
+        
+        .explanation {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Time Complexity Visualization ⚡</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="nInput">Input Size (n):</label>
+                <input type="range" id="nInput" min="1" max="20" value="10">
+                <span class="n-value" id="nValue">10</span>
+            </div>
+            <div class="control-group">
+                <button class="run-button" onclick="runAllAlgorithms()">🚀 Run All Algorithms</button>
+            </div>
+        </div>
+        
+        <div class="algorithms">
+            <div class="algorithm-card">
+                <div class="algorithm-title">Constant Time</div>
+                <div class="complexity-notation">O(1)</div>
+                <div class="operations-count" id="constant-ops">Operations: -</div>
+                <div class="execution-time" id="constant-time">Time: -</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="constant-progress" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="algorithm-card">
+                <div class="algorithm-title">Logarithmic Time</div>
+                <div class="complexity-notation">O(log n)</div>
+                <div class="operations-count" id="log-ops">Operations: -</div>
+                <div class="execution-time" id="log-time">Time: -</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="log-progress" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="algorithm-card">
+                <div class="algorithm-title">Linear Time</div>
+                <div class="complexity-notation">O(n)</div>
+                <div class="operations-count" id="linear-ops">Operations: -</div>
+                <div class="execution-time" id="linear-time">Time: -</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="linear-progress" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="algorithm-card">
+                <div class="algorithm-title">Linearithmic Time</div>
+                <div class="complexity-notation">O(n log n)</div>
+                <div class="operations-count" id="nlogn-ops">Operations: -</div>
+                <div class="execution-time" id="nlogn-time">Time: -</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="nlogn-progress" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="algorithm-card">
+                <div class="algorithm-title">Quadratic Time</div>
+                <div class="complexity-notation">O(n²)</div>
+                <div class="operations-count" id="quadratic-ops">Operations: -</div>
+                <div class="execution-time" id="quadratic-time">Time: -</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="quadratic-progress" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="algorithm-card">
+                <div class="algorithm-title">Exponential Time</div>
+                <div class="complexity-notation">O(2ⁿ)</div>
+                <div class="operations-count" id="exponential-ops">Operations: -</div>
+                <div class="execution-time" id="exponential-time">Time: -</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="exponential-progress" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Growth Comparison Chart</h3>
+            <canvas class="chart" id="growthChart" width="800" height="400"></canvas>
+        </div>
+        
+        <div class="explanation">
+            <h3>Understanding Time Complexity</h3>
+            <p><strong>O(1) - Constant:</strong> Same time regardless of input size. Like accessing an array element by index.</p>
+            <p><strong>O(log n) - Logarithmic:</strong> Time grows slowly as input increases. Like binary search.</p>
+            <p><strong>O(n) - Linear:</strong> Time grows directly with input size. Like searching through an unsorted list.</p>
+            <p><strong>O(n log n) - Linearithmic:</strong> Common in efficient sorting algorithms like merge sort.</p>
+            <p><strong>O(n²) - Quadratic:</strong> Time grows with square of input. Like nested loops or bubble sort.</p>
+            <p><strong>O(2ⁿ) - Exponential:</strong> Time doubles with each additional input. Very inefficient for large n!</p>
+        </div>
+    </div>
+
+    <script>
+        const nInput = document.getElementById('nInput');
+        const nValue = document.getElementById('nValue');
+        
+        nInput.addEventListener('input', function() {
+            nValue.textContent = this.value;
+            updateChart();
+        });
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        async function simulateConstant(n) {
+            const start = performance.now();
+            // Simulate constant time operation
+            let result = 1;
+            await delay(10);
+            const end = performance.now();
+            return {
+                operations: 1,
+                time: (end - start).toFixed(2)
+            };
+        }
+        
+        async function simulateLogarithmic(n) {
+            const start = performance.now();
+            let operations = 0;
+            let i = n;
+            while (i > 1) {
+                i = Math.floor(i / 2);
+                operations++;
+                await delay(5);
+            }
+            const end = performance.now();
+            return {
+                operations: operations,
+                time: (end - start).toFixed(2)
+            };
+        }
+        
+        async function simulateLinear(n) {
+            const start = performance.now();
+            let operations = 0;
+            for (let i = 0; i < n; i++) {
+                operations++;
+                if (i % 2 === 0) await delay(2);
+            }
+            const end = performance.now();
+            return {
+                operations: operations,
+                time: (end - start).toFixed(2)
+            };
+        }
+        
+        async function simulateNLogN(n) {
+            const start = performance.now();
+            let operations = 0;
+            for (let i = 0; i < n; i++) {
+                let j = n;
+                while (j > 1) {
+                    j = Math.floor(j / 2);
+                    operations++;
+                    if (operations % 5 === 0) await delay(1);
+                }
+            }
+            const end = performance.now();
+            return {
+                operations: operations,
+                time: (end - start).toFixed(2)
+            };
+        }
+        
+        async function simulateQuadratic(n) {
+            const start = performance.now();
+            let operations = 0;
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    operations++;
+                    if (operations % 3 === 0) await delay(1);
+                }
+            }
+            const end = performance.now();
+            return {
+                operations: operations,
+                time: (end - start).toFixed(2)
+            };
+        }
+        
+        async function simulateExponential(n) {
+            const start = performance.now();
+            let operations = Math.pow(2, Math.min(n, 15)); // Limit to prevent browser freeze
+            // Simulate the operations
+            for (let i = 0; i < Math.min(operations, 1000); i++) {
+                if (i % 10 === 0) await delay(1);
+            }
+            const end = performance.now();
+            return {
+                operations: operations,
+                time: (end - start).toFixed(2)
+            };
+        }
+        
+        async function updateProgress(id, percentage) {
+            const progress = document.getElementById(id + '-progress');
+            progress.style.width = percentage + '%';
+        }
+        
+        async function runAllAlgorithms() {
+            const n = parseInt(nInput.value);
+            const algorithms = [
+                { name: 'constant', func: simulateConstant },
+                { name: 'log', func: simulateLogarithmic },
+                { name: 'linear', func: simulateLinear },
+                { name: 'nlogn', func: simulateNLogN },
+                { name: 'quadratic', func: simulateQuadratic },
+                { name: 'exponential', func: simulateExponential }
+            ];
+            
+            // Reset all progress bars
+            algorithms.forEach(alg => {
+                updateProgress(alg.name, 0);
+                document.getElementById(alg.name + '-ops').textContent = 'Operations: Running...';
+                document.getElementById(alg.name + '-time').textContent = 'Time: Running...';
+            });
+            
+            const results = [];
+            
+            for (let i = 0; i < algorithms.length; i++) {
+                const alg = algorithms[i];
+                const result = await alg.func(n);
+                results.push(result.operations);
+                
+                document.getElementById(alg.name + '-ops').textContent = `Operations: ${result.operations.toLocaleString()}`;
+                document.getElementById(alg.name + '-time').textContent = `Time: ${result.time}ms`;
+            }
+            
+            // Update progress bars based on relative operations
+            const maxOps = Math.max(...results);
+            for (let i = 0; i < algorithms.length; i++) {
+                const percentage = (results[i] / maxOps) * 100;
+                await updateProgress(algorithms[i].name, percentage);
+                await delay(100);
+            }
+            
+            updateChart();
+        }
+        
+        function updateChart() {
+            const canvas = document.getElementById('growthChart');
+            const ctx = canvas.getContext('2d');
+            const n = parseInt(nInput.value);
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const width = canvas.width - 80;
+            const height = canvas.height - 80;
+            const startX = 60;
+            const startY = height + 20;
+            
+            // Draw axes
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + width, startY);
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX, 20);
+            ctx.stroke();
+            
+            // Labels
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.fillText('Input Size (n)', startX + width/2, canvas.height - 5);
+            ctx.save();
+            ctx.translate(15, height/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('Operations', 0, 0);
+            ctx.restore();
+            
+            // Calculate values for different complexities
+            const complexities = [
+                { name: 'O(1)', color: '#00ff88', func: (x) => 1 },
+                { name: 'O(log n)', color: '#ffd700', func: (x) => Math.log2(x) },
+                { name: 'O(n)', color: '#ff9f40', func: (x) => x },
+                { name: 'O(n log n)', color: '#ff6b6b', func: (x) => x * Math.log2(x) },
+                { name: 'O(n²)', color: '#ff40ff', func: (x) => x * x },
+                { name: 'O(2ⁿ)', color: '#8040ff', func: (x) => Math.pow(2, Math.min(x, 10)) }
+            ];
+            
+            const maxN = 20;
+            const maxValue = Math.max(...complexities.map(c => c.func(Math.min(n, 15))));
+            
+            // Draw lines
+            complexities.forEach((complexity, index) => {
+                ctx.strokeStyle = complexity.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                for (let x = 1; x <= n; x++) {
+                    const plotX = startX + (x / maxN) * width;
+                    const value = complexity.func(x);
+                    const plotY = startY - (value / maxValue) * height;
+                    
+                    if (x === 1) {
+                        ctx.moveTo(plotX, plotY);
+                    } else {
+                        ctx.lineTo(plotX, plotY);
+                    }
+                }
+                ctx.stroke();
+                
+                // Draw legend
+                const legendY = 40 + index * 20;
+                ctx.fillStyle = complexity.color;
+                ctx.fillRect(width - 100, legendY - 10, 15, 10);
+                ctx.fillStyle = 'white';
+                ctx.fillText(complexity.name, width - 80, legendY);
+            });
+            
+            // Highlight current n
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            const currentX = startX + (n / maxN) * width;
+            ctx.beginPath();
+            ctx.moveTo(currentX, startY);
+            ctx.lineTo(currentX, 20);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Initialize
+        updateChart();
+    </script>
+</body>
+</html>
