@@ -28,11 +28,14 @@ public class StringImmutabilityDemo {
 
         // String literals - stored in pool
         String s1 = "Java";
-        String s2 = "Java";
+        String s2 = "JavaHello";
 
         // New keyword - stored in heap
         String s3 = new String("Java");
         String s4 = new String("Java");
+        System.out.println(s1.hashCode());
+        System.out.println(s2.hashCode());
+        System.out.println(s3.hashCode());
 
         System.out.println("Literals (s1 == s2): " + (s1 == s2));     // true
         System.out.println("New objects (s3 == s4): " + (s3 == s4));  // false

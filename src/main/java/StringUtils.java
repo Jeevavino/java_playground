@@ -1,5 +1,8 @@
-public class StringUtils {
+public final class StringUtils {
 
+    private StringUtils() {
+
+    }
 
     // Checks if a string is null or empty
     public static boolean isNullOrEmpty(String str) {
@@ -11,6 +14,8 @@ public class StringUtils {
         if (isNullOrEmpty(str)) return str;
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
+
+
 
     // Reverses a string
     public static String reverse(String str) {

@@ -11,6 +11,7 @@ public abstract class Animal {
         System.out.println("Animal created: " + name);
     }
 
+    //concrete method
     public void eat() {
         System.out.println(name + " is eating");
     }
@@ -113,6 +114,22 @@ class Cat extends Animal {
     }
 }
 
+class Sheep extends Animal {
+    public Sheep(String name, int age) {
+        super(name, age);
+    }
+
+    @Override
+    public void makeSound() {
+        System.out.println(name + " meows");
+    }
+
+    @Override
+    public void move() {
+        System.out.println(name + " prowls");
+    }
+}
+
 // ========== ZOO KEEPER CLASS - SHOWS POLYMORPHISM BENEFITS ==========
 class ZooKeeper {
     private String keeperName;
@@ -179,7 +196,7 @@ class AnimalTest {
 
         System.out.println("\n=== BENEFIT 3: EASY TO ADD NEW TYPES ===");
         // ✅ Add new animal - no changes needed to existing code!
-        Animal[] moreAnimals = {new Cat("Fluffy", 2), new Bird("Eagle", 5)};
+        Animal[] moreAnimals = {new Sheep("Fluffy 1", 2), new Cat("Fluffy", 2), new Bird("Eagle", 5)};
         keeper.feedAllAnimals(moreAnimals); // Still works!
 
         System.out.println("\n=== BENEFIT 4: FLEXIBLE COLLECTIONS ===");

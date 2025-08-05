@@ -11,6 +11,7 @@ import java.util.Map;
  * - Equal objects MUST have same hashCode (hashCode contract)
  * - HashSet uses hashCode() for bucketing, equals() for collision handling
  */
+
 public final class Employee {
     private final String name;
     private final int id;
@@ -26,6 +27,7 @@ public final class Employee {
     // Two employees equal if same id and name
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) return true;
         if (obj == null || this.getClass() != obj.getClass()) return false;
         Employee employee = (Employee) obj;
@@ -35,7 +37,7 @@ public final class Employee {
     // Must include all fields used in equals()
     @Override
     public int hashCode() {
-        return Objects.hash(name, id);
+        return 1;
     }
 
     @Override
