@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Builder Pattern Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 1rem 0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: 'JavaScript';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .keyword { color: #ff6b6b; }
+        .string { color: #4ecdc4; }
+        .comment { color: #95a5a6; font-style: italic; }
+        .method { color: #f39c12; }
+
+        .interactive-demo {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #219a52; }
+
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+
+        .output {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 1rem;
+            margin: 1rem 0;
+            min-height: 50px;
+            font-family: monospace;
+        }
+
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .step {
+            background: #e8f5e8;
+            border-left: 4px solid #4CAF50;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .step-number {
+            background: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .pros, .cons {
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .pros {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .cons {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+
+        .pros h3, .cons h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .chain-visualization {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f0f8ff;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chain-step {
+            background: #3498db;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .chain-arrow {
+            font-size: 1.5rem;
+            color: #3498db;
+        }
+
+        @media (max-width: 768px) {
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+            
+            .chain-visualization {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .chain-arrow {
+                transform: rotate(90deg);
+                align-self: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ Builder Pattern Demo</h1>
+            <p>Learn how the Builder Pattern creates complex objects step by step</p>
+        </div>
+
+        <div class="content">
+            <!-- Section 1: Introduction -->
+            <div class="section">
+                <h2>1. What is the Builder Pattern?</h2>
+                <p>The Builder Pattern is a creational design pattern that lets you construct complex objects step by step. It's especially useful when an object needs to be created with many optional parameters.</p>
+                
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h3>✅ Benefits</h3>
+                        <ul>
+                            <li>Readable and clear code</li>
+                            <li>Flexible parameter order</li>
+                            <li>Built-in validation</li>
+                            <li>Immutable objects</li>
+                            <li>Method chaining</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h3>❌ Without Builder</h3>
+                        <ul>
+                            <li>Confusing constructors</li>
+                            <li>Parameter order mistakes</li>
+                            <li>No validation until use</li>
+                            <li>Hard to extend</li>
+                            <li>Mutable objects</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Code Implementation -->
+            <div class="section">
+                <h2>2. JavaScript Implementation</h2>
+                
+                <div class="code-block">
+<span class="comment">// User class - the object we want to build</span>
+<span class="keyword">class</span> User {
+    <span class="keyword">constructor</span>(name, email) {
+        <span class="keyword">this</span>.name = name;
+        <span class="keyword">this</span>.email = email;
+        <span class="comment">// Make object immutable</span>
+        Object.freeze(<span class="keyword">this</span>);
+    }
+
+    <span class="method">toString</span>() {
+        <span class="keyword">return</span> <span class="string">`User{name: '${this.name}', email: '${this.email}'}`</span>;
+    }
+
+    <span class="comment">// Static Builder class</span>
+    <span class="keyword">static</span> Builder = <span class="keyword">class</span> {
+        <span class="method">setName</span>(name) {
+            <span class="keyword">this</span>.name = name;
+            <span class="keyword">return</span> <span class="keyword">this</span>; <span class="comment">// Enable method chaining</span>
+        }
+
+        <span class="method">setEmail</span>(email) {
+            <span class="keyword">this</span>.email = email;
+            <span class="keyword">return</span> <span class="keyword">this</span>; <span class="comment">// Enable method chaining</span>
+        }
+
+        <span class="method">build</span>() {
+            <span class="comment">// Validation</span>
+            <span class="keyword">if</span> (!<span class="keyword">this</span>.name || <span class="keyword">this</span>.name.trim() === <span class="string">''</span>) {
+                <span class="keyword">throw new</span> Error(<span class="string">'Name cannot be empty'</span>);
+            }
+            <span class="keyword">if</span> (!<span class="keyword">this</span>.email || !<span class="keyword">this</span>.email.includes(<span class="string">'@'</span>)) {
+                <span class="keyword">throw new</span> Error(<span class="string">'Valid email is required'</span>);
+            }
+            
+            <span class="keyword">return new</span> User(<span class="keyword">this</span>.name, <span class="keyword">this</span>.email);
+        }
+    }
+}
+                </div>
+            </div>
+
+            <!-- Section 3: Method Chaining Visualization -->
+            <div class="section">
+                <h2>3. How Method Chaining Works</h2>
+                <p>Each builder method returns <code>this</code>, allowing you to chain method calls:</p>
+                
+                <div class="chain-visualization">
+                    <div class="chain-step">new User.Builder()</div>
+                    <div class="chain-arrow">→</div>
+                    <div class="chain-step">.setName("John")</div>
+                    <div class="chain-arrow">→</div>
+                    <div class="chain-step">.setEmail("john@email.com")</div>
+                    <div class="chain-arrow">→</div>
+                    <div class="chain-step">.build()</div>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <strong>new User.Builder()</strong> creates a new builder instance
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <strong>.setName("John")</strong> sets the name and returns the same builder instance
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <strong>.setEmail("john@email.com")</strong> sets the email and returns the same builder instance
+                </div>
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <strong>.build()</strong> validates the data and creates the final User object
+                </div>
+            </div>
+
+            <!-- Section 4: Interactive Demo -->
+            <div class="section">
+                <h2>4. Interactive Demo</h2>
+                <p>Try creating User objects with the Builder pattern:</p>
+                
+                <div class="interactive-demo">
+                    <div class="input-group">
+                        <label for="userName">Name:</label>
+                        <input type="text" id="userName" placeholder="Enter user name">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="userEmail">Email:</label>
+                        <input type="email" id="userEmail" placeholder="Enter email address">
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="createUser()">🏗️ Build User</button>
+                    <button class="btn btn-danger" onclick="createInvalidUser()">❌ Try Invalid User</button>
+                    <button class="btn" onclick="clearOutput()">🗑️ Clear Output</button>
+                    
+                    <div id="output" class="output">
+                        Click "Build User" to see the Builder pattern in action!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Comparison -->
+            <div class="section">
+                <h2>5. With vs Without Builder Pattern</h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <h3>❌ Without Builder (Confusing)</h3>
+                        <div class="code-block">
+<span class="comment">// Which parameter is which?</span>
+<span class="keyword">new</span> User(<span class="string">"John"</span>, <span class="string">"john@email.com"</span>);
+
+<span class="comment">// Easy to swap accidentally!</span>
+<span class="keyword">new</span> User(<span class="string">"john@email.com"</span>, <span class="string">"John"</span>);
+
+<span class="comment">// No validation</span>
+<span class="keyword">new</span> User(<span class="string">""</span>, <span class="string">"invalid"</span>);
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3>✅ With Builder (Clear)</h3>
+                        <div class="code-block">
+<span class="comment">// Crystal clear!</span>
+<span class="keyword">new</span> User.Builder()
+    .<span class="method">setName</span>(<span class="string">"John"</span>)
+    .<span class="method">setEmail</span>(<span class="string">"john@email.com"</span>)
+    .<span class="method">build</span>();
+
+<span class="comment">// Order doesn't matter</span>
+<span class="keyword">new</span> User.Builder()
+    .<span class="method">setEmail</span>(<span class="string">"john@email.com"</span>)
+    .<span class="method">setName</span>(<span class="string">"John"</span>)
+    .<span class="method">build</span>();
+
+<span class="comment">// Built-in validation!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Real-world Examples -->
+            <div class="section">
+                <h2>6. Real-world Examples</h2>
+                <p>The Builder pattern is commonly used in:</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <div style="background: #e8f5e8; padding: 1rem; border-radius: 8px;">
+                        <h4>🏗️ Configuration Objects</h4>
+                        <p>Building complex configuration objects with many optional settings</p>
+                    </div>
+                    
+                    <div style="background: #e8f5e8; padding: 1rem; border-radius: 8px;">
+                        <h4>🗄️ Database Queries</h4>
+                        <p>Constructing SQL queries with various clauses and conditions</p>
+                    </div>
+                    
+                    <div style="background: #e8f5e8; padding: 1rem; border-radius: 8px;">
+                        <h4>🏠 UI Components</h4>
+                        <p>Creating complex UI components with many styling options</p>
+                    </div>
+                    
+                    <div style="background: #e8f5e8; padding: 1rem; border-radius: 8px;">
+                        <h4>📄 Document Generation</h4>
+                        <p>Building documents with various sections and formatting</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User class implementation
+        class User {
+            constructor(name, email) {
+                this.name = name;
+                this.email = email;
+                // Make object immutable
+                Object.freeze(this);
+            }
+
+            toString() {
+                return `User{name: '${this.name}', email: '${this.email}'}`;
+            }
+
+            // Static Builder class
+            static Builder = class {
+                setName(name) {
+                    this.name = name;
+                    return this; // Enable method chaining
+                }
+
+                setEmail(email) {
+                    this.email = email;
+                    return this; // Enable method chaining
+                }
+
+                build() {
+                    // Validation
+                    if (!this.name || this.name.trim() === '') {
+                        throw new Error('Name cannot be empty');
+                    }
+                    if (!this.email || !this.email.includes('@')) {
+                        throw new Error('Valid email is required');
+                    }
+                    
+                    return new User(this.name, this.email);
+                }
+            }
+        }
+
+        function createUser() {
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            const output = document.getElementById('output');
+            
+            try {
+                // Show the building process step by step
+                output.className = 'output';
+                output.innerHTML = `
+                    <div style="margin-bottom: 10px;"><strong>🏗️ Building User step by step:</strong></div>
+                    <div style="margin: 5px 0; font-family: monospace; background: #f0f8ff; padding: 5px; border-radius: 3px;">
+                        1. new User.Builder() → Creates builder instance
+                    </div>
+                    <div style="margin: 5px 0; font-family: monospace; background: #f0f8ff; padding: 5px; border-radius: 3px;">
+                        2. .setName("${name}") → Sets name, returns builder
+                    </div>
+                    <div style="margin: 5px 0; font-family: monospace; background: #f0f8ff; padding: 5px; border-radius: 3px;">
+                        3. .setEmail("${email}") → Sets email, returns builder
+                    </div>
+                    <div style="margin: 5px 0; font-family: monospace; background: #f0f8ff; padding: 5px; border-radius: 3px;">
+                        4. .build() → Validates and creates User object
+                    </div>
+                `;
+                
+                // Actually create the user
+                setTimeout(() => {
+                    try {
+                        const user = new User.Builder()
+                            .setName(name)
+                            .setEmail(email)
+                            .build();
+                        
+                        output.className = 'output success';
+                        output.innerHTML = `
+                            <div style="margin-bottom: 10px;"><strong>✅ Success!</strong></div>
+                            <div style="font-family: monospace;">${user.toString()}</div>
+                            <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                                Object is immutable - try user.name = "new name" in console!
+                            </div>
+                        `;
+                        
+                        // Make user available in console for testing
+                        window.lastCreatedUser = user;
+                        console.log('Created user (available as window.lastCreatedUser):', user);
+                    } catch (error) {
+                        output.className = 'output error';
+                        output.innerHTML = `
+                            <div><strong>❌ Validation Error:</strong></div>
+                            <div>${error.message}</div>
+                            <div style="margin-top: 10px; font-size: 0.9em;">
+                                The Builder pattern caught this error before creating an invalid object!
+                            </div>
+                        `;
+                    }
+                }, 1500);
+            } catch (error) {
+                output.className = 'output error';
+                output.innerHTML = `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+
+        function createInvalidUser() {
+            const output = document.getElementById('output');
+            
+            // Try to create invalid users to demonstrate validation
+            const invalidExamples = [
+                { name: '', email: 'test@email.com', error: 'empty name' },
+                { name: 'John', email: 'invalid-email', error: 'invalid email format' },
+                { name: 'John', email: '', error: 'empty email' }
+            ];
+            
+            const randomExample = invalidExamples[Math.floor(Math.random() * invalidExamples.length)];
+            
+            try {
+                new User.Builder()
+                    .setName(randomExample.name)
+                    .setEmail(randomExample.email)
+                    .build();
+            } catch (error) {
+                output.className = 'output error';
+                output.innerHTML = `
+                    <div><strong>❌ Validation Caught Invalid Data:</strong></div>
+                    <div style="margin: 10px 0; font-family: monospace; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeaa7;">
+                        Attempted: name="${randomExample.name}", email="${randomExample.email}"
+                    </div>
+                    <div style="margin: 10px 0;"><strong>Error:</strong> ${error.message}</div>
+                    <div style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                        This demonstrates how the Builder pattern prevents creation of invalid objects!
+                    </div>
+                `;
+            }
+        }
+
+        function clearOutput() {
+            const output = document.getElementById('output');
+            output.className = 'output';
+            output.innerHTML = 'Click "Build User" to see the Builder pattern in action!';
+            
+            // Clear input fields
+            document.getElementById('userName').value = '';
+            document.getElementById('userEmail').value = '';
+        }
+
+        // Add some example values on load
+        window.addEventListener('load', () => {
+            document.getElementById('userName').value = 'John Doe';
+            document.getElementById('userEmail').value = 'john.doe@example.com';
+        });
+    </script>
+</body>
+</html>

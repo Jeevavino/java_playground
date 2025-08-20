@@ -21,3 +21,29 @@ class TestDemoEnum {
     }
 
 }
+
+class Demo2 {
+    public static void main(String[] args) {
+        Color color = Color.BLUE;
+
+        // Switch in client code
+        switch (color) {
+            case RED:
+                System.out.println("Selected RED");
+                break;
+            case BLUE:
+                System.out.println("Selected BLUE");
+                break;
+            case YELLOW:
+                System.out.println("Selected YELLOW");
+                break;
+            default:
+                // Default helps if enum evolves (new constants added)
+                System.out.println("Unknown color");
+        }
+
+
+        // Switch-like logic encapsulated in enum method
+        System.out.println("Description: " + color.getType());
+    }
+}

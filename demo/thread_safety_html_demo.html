@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thread Safety Demo - Instance Variable Problems</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .unsafe-section {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.05);
+        }
+
+        .safe-section {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.05);
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .unsafe-title {
+            color: #ff6b6b;
+        }
+
+        .safe-title {
+            color: #4ecdc4;
+        }
+
+        .bank-account {
+            background: #f8f9fa;
+            border: 3px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .balance-display {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .thread-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .thread {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 200px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .thread-1 {
+            border-color: #ff9f43;
+            background: rgba(255, 159, 67, 0.1);
+        }
+
+        .thread-2 {
+            border-color: #10ac84;
+            background: rgba(16, 172, 132, 0.1);
+        }
+
+        .thread.active {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .thread-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .operation-step {
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .step-read {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .step-calculate {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .step-write {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+        }
+
+        .step-active {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .explanation {
+            background: #f8f9fa;
+            border-left: 5px solid #007bff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .problem-highlight {
+            background: #ffebee;
+            border-left: 5px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .solution-highlight {
+            background: #e8f5e8;
+            border-left: 5px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .race-condition-demo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+            align-items: start;
+        }
+
+        .timeline {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .timeline-step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-step.highlight {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .thread-container {
+                flex-direction: column;
+            }
+            
+            .race-condition-demo {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+
+        .sync-lock {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5em;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .sync-lock.active {
+            opacity: 1;
+            color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧵 Thread Safety Demo</h1>
+            <p>Understanding Instance Variable Problems in Multi-Threading</p>
+        </div>
+
+        <div class="content">
+            <!-- Explanation Section -->
+            <div class="explanation">
+                <h3>📚 What You'll Learn</h3>
+                <p>This interactive demo shows why <strong>instance variables</strong> cause problems in multi-threaded applications and how <strong>synchronization</strong> solves them.</p>
+                
+                <h4>Key Concepts:</h4>
+                <ul>
+                    <li><strong>Instance Variables</strong>: Shared memory between threads</li>
+                    <li><strong>Race Conditions</strong>: Multiple threads accessing shared data simultaneously</li>
+                    <li><strong>Read-Modify-Write Operations</strong>: The dangerous three-step process</li>
+                    <li><strong>Synchronization</strong>: Making operations atomic and thread-safe</li>
+                </ul>
+            </div>
+
+            <!-- Unsafe Version -->
+            <div class="demo-section unsafe-section">
+                <h2 class="section-title unsafe-title">
+                    🚨 UNSAFE Version - Race Conditions
+                </h2>
+                
+                <div class="bank-account">
+                    <h3>Bank Account (Shared Instance Variable)</h3>
+                    <div class="balance-display" id="unsafeBalance">Balance: $1000</div>
+                    
+                    <div class="thread-container">
+                        <div class="thread thread-1" id="unsafeThread1">
+                            <div class="thread-title">Thread 1: Depositor</div>
+                            <div class="operation-step step-read" id="unsafe1Read">1. Read balance: $1000</div>
+                            <div class="operation-step step-calculate" id="unsafe1Calc">2. Calculate: $1000 + $100</div>
+                            <div class="operation-step step-write" id="unsafe1Write">3. Write balance: $1100</div>
+                        </div>
+                        
+                        <div class="thread thread-2" id="unsafeThread2">
+                            <div class="thread-title">Thread 2: Withdrawer</div>
+                            <div class="operation-step step-read" id="unsafe2Read">1. Read balance: $1000</div>
+                            <div class="operation-step step-calculate" id="unsafe2Calc">2. Calculate: $1000 - $50</div>
+                            <div class="operation-step step-write" id="unsafe2Write">3. Write balance: $950</div>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="btn" onclick="runUnsafeDemo()" id="unsafeBtn">
+                            ▶️ Run Unsafe Demo
+                        </button>
+                        <button class="btn" onclick="resetUnsafeDemo()">
+                            🔄 Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="problem-highlight">
+                    <h4>❌ The Problem:</h4>
+                    <p><strong>Thread 2 overwrites Thread 1's changes!</strong> Both threads read the same initial value ($1000), perform their calculations, but Thread 2's write operation happens last, completely losing Thread 1's deposit of $100.</p>
+                </div>
+            </div>
+
+            <!-- Safe Version -->
+            <div class="demo-section safe-section">
+                <h2 class="section-title safe-title">
+                    ✅ SAFE Version - Synchronized Access
+                </h2>
+                
+                <div class="bank-account">
+                    <h3>Bank Account (Synchronized Methods)</h3>
+                    <div class="balance-display" id="safeBalance">Balance: $1000</div>
+                    <div class="sync-lock" id="syncLock">🔒</div>
+                    
+                    <div class="thread-container">
+                        <div class="thread thread-1" id="safeThread1">
+                            <div class="thread-title">Thread 1: Depositor</div>
+                            <div class="operation-step step-read" id="safe1Read">1. Read balance: $1000</div>
+                            <div class="operation-step step-calculate" id="safe1Calc">2. Calculate: $1000 + $100</div>
+                            <div class="operation-step step-write" id="safe1Write">3. Write balance: $1100</div>
+                        </div>
+                        
+                        <div class="thread thread-2" id="safeThread2">
+                            <div class="thread-title">Thread 2: Withdrawer</div>
+                            <div class="operation-step step-read" id="safe2Read">1. Read balance: $1100</div>
+                            <div class="operation-step step-calculate" id="safe2Calc">2. Calculate: $1100 - $50</div>
+                            <div class="operation-step step-write" id="safe2Write">3. Write balance: $1050</div>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="btn" onclick="runSafeDemo()" id="safeBtn">
+                            ▶️ Run Safe Demo
+                        </button>
+                        <button class="btn" onclick="resetSafeDemo()">
+                            🔄 Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="solution-highlight">
+                    <h4>✅ The Solution:</h4>
+                    <p><strong>Synchronized methods ensure atomic operations!</strong> Thread 1 completes its entire read-modify-write operation before Thread 2 can start. The final balance correctly reflects both transactions: $1000 + $100 - $50 = $1050.</p>
+                </div>
+            </div>
+
+            <!-- Code Examples -->
+            <div class="explanation">
+                <h3>💻 Code Comparison</h3>
+                
+                <h4>Unsafe Code (Problems):</h4>
+                <div class="code-block">
+public class UnsafeBankAccount {
+    private double balance; // ⚠️ Shared instance variable
+    
+    // ❌ NO synchronization - Race conditions possible!
+    public void deposit(double amount) {
+        double current = balance;    // Step 1: Read
+        // Other threads can interfere here! ⚡
+        balance = current + amount;  // Step 2: Write
+    }
+}
+                </div>
+                
+                <h4>Safe Code (Solution):</h4>
+                <div class="code-block">
+public class SafeBankAccount {
+    private double balance; // ✅ Same instance variable
+    
+    // ✅ Synchronized - Only one thread at a time!
+    public synchronized void deposit(double amount) {
+        double current = balance;    // Step 1: Read
+        // 🔒 Lock prevents other threads from interfering
+        balance = current + amount;  // Step 2: Write
+    } // Lock automatically released here
+}
+                </div>
+            </div>
+
+            <!-- Race Condition Timeline -->
+            <div class="explanation">
+                <h3>⏱️ Race Condition Timeline</h3>
+                <div class="race-condition-demo">
+                    <div class="timeline">
+                        <h4>Unsafe Execution:</h4>
+                        <div class="timeline-step" id="timeline1">
+                            <div class="step-number">1</div>
+                            <div>Thread 1 reads balance: $1000</div>
+                        </div>
+                        <div class="timeline-step" id="timeline2">
+                            <div class="step-number">2</div>
+                            <div>Thread 2 reads balance: $1000 (same!)</div>
+                        </div>
+                        <div class="timeline-step" id="timeline3">
+                            <div class="step-number">3</div>
+                            <div>Thread 1 calculates: $1000 + $100</div>
+                        </div>
+                        <div class="timeline-step" id="timeline4">
+                            <div class="step-number">4</div>
+                            <div>Thread 2 calculates: $1000 - $50</div>
+                        </div>
+                        <div class="timeline-step" id="timeline5">
+                            <div class="step-number">5</div>
+                            <div>Thread 1 writes: balance = $1100</div>
+                        </div>
+                        <div class="timeline-step" id="timeline6">
+                            <div class="step-number">6</div>
+                            <div>🚨 Thread 2 writes: balance = $950 (overwrites!)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline">
+                        <h4>Safe Execution:</h4>
+                        <div class="timeline-step" id="safeTimeline1">
+                            <div class="step-number">1</div>
+                            <div>Thread 1 acquires lock 🔒</div>
+                        </div>
+                        <div class="timeline-step" id="safeTimeline2">
+                            <div class="step-number">2</div>
+                            <div>Thread 1 reads, calculates, writes</div>
+                        </div>
+                        <div class="timeline-step" id="safeTimeline3">
+                            <div class="step-number">3</div>
+                            <div>Thread 1 releases lock 🔓</div>
+                        </div>
+                        <div class="timeline-step" id="safeTimeline4">
+                            <div class="step-number">4</div>
+                            <div>Thread 2 acquires lock 🔒</div>
+                        </div>
+                        <div class="timeline-step" id="safeTimeline5">
+                            <div class="step-number">5</div>
+                            <div>Thread 2 reads updated balance</div>
+                        </div>
+                        <div class="timeline-step" id="safeTimeline6">
+                            <div class="step-number">6</div>
+                            <div>✅ Final result is correct!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Takeaways -->
+            <div class="explanation">
+                <h3>🎯 Key Takeaways</h3>
+                <ul>
+                    <li><strong>Instance variables are shared</strong> - All threads accessing the same object see the same variable</li>
+                    <li><strong>Read-Modify-Write is dangerous</strong> - These three operations must be atomic</li>
+                    <li><strong>Race conditions lose data</strong> - Later writes can overwrite earlier changes</li>
+                    <li><strong>Synchronization prevents races</strong> - Only one thread can access synchronized methods at a time</li>
+                    <li><strong>Local variables are safe</strong> - Each thread has its own stack and local variables</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let unsafeRunning = false;
+        let safeRunning = false;
+
+        async function runUnsafeDemo() {
+            if (unsafeRunning) return;
+            unsafeRunning = true;
+            
+            const btn = document.getElementById('unsafeBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Running...';
+            
+            // Reset first
+            resetUnsafeDemo();
+            
+            // Simulate race condition
+            await sleep(500);
+            
+            // Both threads start "simultaneously"
+            document.getElementById('unsafeThread1').classList.add('active');
+            document.getElementById('unsafeThread2').classList.add('active');
+            
+            // Step 1: Both read same value
+            document.getElementById('unsafe1Read').classList.add('step-active');
+            document.getElementById('unsafe2Read').classList.add('step-active');
+            await sleep(1000);
+            
+            // Step 2: Both calculate
+            document.getElementById('unsafe1Read').classList.remove('step-active');
+            document.getElementById('unsafe2Read').classList.remove('step-active');
+            document.getElementById('unsafe1Calc').classList.add('step-active');
+            document.getElementById('unsafe2Calc').classList.add('step-active');
+            await sleep(1000);
+            
+            // Step 3: Thread 1 writes first
+            document.getElementById('unsafe1Calc').classList.remove('step-active');
+            document.getElementById('unsafe1Write').classList.add('step-active');
+            document.getElementById('unsafeBalance').textContent = 'Balance: $1100';
+            document.getElementById('unsafeBalance').style.background = 'linear-gradient(45deg, #4caf50, #8bc34a)';
+            await sleep(800);
+            
+            // Step 4: Thread 2 overwrites!
+            document.getElementById('unsafe2Calc').classList.remove('step-active');
+            document.getElementById('unsafe2Write').classList.add('step-active');
+            document.getElementById('unsafeBalance').textContent = 'Balance: $950';
+            document.getElementById('unsafeBalance').style.background = 'linear-gradient(45deg, #f44336, #e57373)';
+            await sleep(1000);
+            
+            // Highlight the problem
+            document.getElementById('unsafeBalance').style.animation = 'pulse 0.5s ease-in-out 3';
+            
+            // Cleanup
+            document.getElementById('unsafeThread1').classList.remove('active');
+            document.getElementById('unsafeThread2').classList.remove('active');
+            document.getElementById('unsafe1Write').classList.remove('step-active');
+            document.getElementById('unsafe2Write').classList.remove('step-active');
+            
+            btn.disabled = false;
+            btn.textContent = '▶️ Run Unsafe Demo';
+            unsafeRunning = false;
+        }
+
+        async function runSafeDemo() {
+            if (safeRunning) return;
+            safeRunning = true;
+            
+            const btn = document.getElementById('safeBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Running...';
+            
+            // Reset first
+            resetSafeDemo();
+            
+            await sleep(500);
+            
+            // Thread 1 gets lock first
+            document.getElementById('syncLock').classList.add('active');
+            document.getElementById('safeThread1').classList.add('active');
+            await sleep(500);
+            
+            // Thread 1: Read
+            document.getElementById('safe1Read').classList.add('step-active');
+            await sleep(800);
+            
+            // Thread 1: Calculate
+            document.getElementById('safe1Read').classList.remove('step-active');
+            document.getElementById('safe1Calc').classList.add('step-active');
+            await sleep(800);
+            
+            // Thread 1: Write
+            document.getElementById('safe1Calc').classList.remove('step-active');
+            document.getElementById('safe1Write').classList.add('step-active');
+            document.getElementById('safeBalance').textContent = 'Balance: $1100';
+            document.getElementById('safeBalance').style.background = 'linear-gradient(45deg, #4caf50, #8bc34a)';
+            await sleep(800);
+            
+            // Thread 1 releases lock, Thread 2 gets it
+            document.getElementById('safe1Write').classList.remove('step-active');
+            document.getElementById('safeThread1').classList.remove('active');
+            document.getElementById('safeThread2').classList.add('active');
+            
+            // Update Thread 2's read step with new balance
+            document.getElementById('safe2Read').textContent = '1. Read balance: $1100';
+            document.getElementById('safe2Calc').textContent = '2. Calculate: $1100 - $50';
+            document.getElementById('safe2Write').textContent = '3. Write balance: $1050';
+            
+            await sleep(500);
+            
+            // Thread 2: Read (gets updated value!)
+            document.getElementById('safe2Read').classList.add('step-active');
+            await sleep(800);
+            
+            // Thread 2: Calculate
+            document.getElementById('safe2Read').classList.remove('step-active');
+            document.getElementById('safe2Calc').classList.add('step-active');
+            await sleep(800);
+            
+            // Thread 2: Write
+            document.getElementById('safe2Calc').classList.remove('step-active');
+            document.getElementById('safe2Write').classList.add('step-active');
+            document.getElementById('safeBalance').textContent = 'Balance: $1050';
+            document.getElementById('safeBalance').style.background = 'linear-gradient(45deg, #4caf50, #66bb6a)';
+            await sleep(1000);
+            
+            // Success animation
+            document.getElementById('safeBalance').style.animation = 'pulse 0.5s ease-in-out 3';
+            
+            // Cleanup
+            document.getElementById('syncLock').classList.remove('active');
+            document.getElementById('safeThread2').classList.remove('active');
+            document.getElementById('safe2Write').classList.remove('step-active');
+            
+            btn.disabled = false;
+            btn.textContent = '▶️ Run Safe Demo';
+            safeRunning = false;
+        }
+
+        function resetUnsafeDemo() {
+            document.getElementById('unsafeBalance').textContent = 'Balance: $1000';
+            document.getElementById('unsafeBalance').style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
+            document.getElementById('unsafeBalance').style.animation = '';
+            
+            // Reset thread states
+            document.getElementById('unsafeThread1').classList.remove('active');
+            document.getElementById('unsafeThread2').classList.remove('active');
+            
+            // Reset step highlights
+            const steps = ['unsafe1Read', 'unsafe1Calc', 'unsafe1Write', 'unsafe2Read', 'unsafe2Calc', 'unsafe2Write'];
+            steps.forEach(step => document.getElementById(step).classList.remove('step-active'));
+        }
+
+        function resetSafeDemo() {
+            document.getElementById('safeBalance').textContent = 'Balance: $1000';
+            document.getElementById('safeBalance').style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
+            document.getElementById('safeBalance').style.animation = '';
+            document.getElementById('syncLock').classList.remove('active');
+            
+            // Reset thread states
+            document.getElementById('safeThread1').classList.remove('active');
+            document.getElementById('safeThread2').classList.remove('active');
+            
+            // Reset step highlights
+            const steps = ['safe1Read', 'safe1Calc', 'safe1Write', 'safe2Read', 'safe2Calc', 'safe2Write'];
+            steps.forEach(step => document.getElementById(step).classList.remove('step-active'));
+            
+            // Reset Thread 2 text to original values
+            document.getElementById('safe2Read').textContent = '1. Read balance: $1000';
+            document.getElementById('safe2Calc').textContent = '2. Calculate: $1000 - $50';
+            document.getElementById('safe2Write').textContent = '3. Write balance: $950';
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Add CSS for pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

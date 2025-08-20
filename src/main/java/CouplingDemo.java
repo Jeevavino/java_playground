@@ -27,7 +27,7 @@ class SMSSubscriber {
 // PROBLEM: Newspaper depends on concrete classes
 // - Must maintain separate lists and methods for each subscriber type
 // - Adding new types requires modifying this class (violates Open/Closed Principle)
-class TightNewspaper {
+class PoorNewspaper {
     private java.util.List<EmailSubscriber> emailSubs = new java.util.ArrayList<>();
     private java.util.List<SMSSubscriber> smsSubs = new java.util.ArrayList<>();
 
@@ -103,7 +103,7 @@ class LooseNewspaper {
 public class CouplingDemo {
     public static void main(String[] args) {
         System.out.println("=== TIGHT COUPLING ===");
-        TightNewspaper tightNews = new TightNewspaper();
+        PoorNewspaper tightNews = new PoorNewspaper();
         tightNews.addEmail(new EmailSubscriber("john@mail.com"));
         tightNews.addSMS(new SMSSubscriber("123-456-7890"));
         tightNews.publishNews("Breaking News!");
