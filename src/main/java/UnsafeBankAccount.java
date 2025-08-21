@@ -7,7 +7,7 @@ public class UnsafeBankAccount {
     }
 
     // UNSAFE method - no synchronization
-    public  void unsafeDeposit(double amount) {
+    public synchronized void unsafeDeposit(double amount) {
         double currentBalance = balance;
         // Simulate some processing time (race condition opportunity)
         try { Thread.sleep(10); } catch (InterruptedException e) {}
@@ -18,7 +18,7 @@ public class UnsafeBankAccount {
     }
 
     // UNSAFE method - no synchronization
-    public  void unsafeWithdraw(double amount) {
+    public synchronized void unsafeWithdraw(double amount) {
         if (balance >= amount) {
             double currentBalance = balance;
             // Simulate some processing time (race condition opportunity)

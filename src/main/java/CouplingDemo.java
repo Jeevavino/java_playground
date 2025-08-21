@@ -11,6 +11,11 @@ class EmailSubscriber {
     public void receiveNews(String news) {
         System.out.println("Email to " + email + ": " + news);
     }
+
+    public void bankAccount() {
+        //bank information
+    }
+
 }
 
 // Concrete SMS subscriber class
@@ -18,6 +23,16 @@ class SMSSubscriber {
     private String phone;
 
     public SMSSubscriber(String phone) { this.phone = phone; }
+
+    public void receiveNews(String news) {
+        System.out.println("SMS to " + phone + ": " + news);
+    }
+}
+
+class TVSubscriber {
+    private String phone;
+
+    public TVSubscriber(String phone) { this.phone = phone; }
 
     public void receiveNews(String news) {
         System.out.println("SMS to " + phone + ": " + news);
@@ -38,7 +53,10 @@ class PoorNewspaper {
     // Must loop through each type separately - code duplication
     public void publishNews(String news) {
         System.out.println("Publishing: " + news);
-        for (EmailSubscriber sub : emailSubs) sub.receiveNews(news);
+        for (EmailSubscriber sub : emailSubs) {
+            sub.receiveNews(news);
+
+        }
         for (SMSSubscriber sub : smsSubs) sub.receiveNews(news);
         // Adding PushNotificationSubscriber would require another loop!
     }
@@ -70,6 +88,17 @@ class SMSObserver implements Observer {
     private String phone;
 
     public SMSObserver(String phone) { this.phone = phone; }
+
+    @Override
+    public void update(String news) {
+        System.out.println("SMS to " + phone + ": " + news);
+    }
+}
+
+class TVObserver implements Observer {
+    private String phone;
+
+    public TVObserver(String phone) { this.phone = phone; }
 
     @Override
     public void update(String news) {
@@ -112,6 +141,7 @@ public class CouplingDemo {
         LooseNewspaper looseNews = new LooseNewspaper();
         looseNews.addObserver(new EmailObserver("jane@mail.com"));
         looseNews.addObserver(new SMSObserver("987-654-3210"));
+        looseNews.addObserver(new TVObserver("88343"));
         // Easy to add new types: looseNews.addObserver(new PushNotificationObserver("device123"));
         looseNews.publishNews("Breaking News!");
 

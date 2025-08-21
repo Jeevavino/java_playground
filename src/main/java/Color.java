@@ -42,7 +42,6 @@ class Demo2 {
                 System.out.println("Unknown color");
         }
 
-
         // Switch-like logic encapsulated in enum method
         System.out.println("Description: " + color.getType());
     }

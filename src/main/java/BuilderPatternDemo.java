@@ -23,6 +23,7 @@ class User {
     }
 
     // Static nested Builder class
+
     public static class Builder {
         private String name;
         private String email;
@@ -79,13 +80,13 @@ public class BuilderPatternDemo {
                 .build();
         System.out.println("   " + user1);
         System.out.println("   Crystal clear what each value represents!\n");
-
         // Example 2: Flexible order
         System.out.println("Example 2 - Flexible field order:");
         User user2 = new User.Builder()
                 .setEmail("jane.smith@example.com")  // Email first
                 .setName("Jane Smith")               // Name second
                 .build();
+
         System.out.println("   " + user2);
         System.out.println("   Order doesn't matter - very flexible!\n");
 
