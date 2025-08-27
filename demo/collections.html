@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Collections Framework - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            color: #667eea;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .demo-section {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .demo-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff512f, #dd2476);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #667eea;
+        }
+
+        .collection-display {
+            min-height: 200px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px dashed #ddd;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .collection-item {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            animation: slideIn 0.5s ease;
+            cursor: pointer;
+        }
+
+        .collection-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .map-item {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .key {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .queue-item {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            position: relative;
+        }
+
+        .queue-item::before {
+            content: attr(data-priority);
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 5px solid #2196f3;
+        }
+
+        .info-panel h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .characteristics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .characteristic {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .characteristic .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .code-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            position: relative;
+        }
+
+        .code-example::before {
+            content: 'Java Code';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: #4a5568;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .complexity-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .complexity-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .complexity-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            background: white;
+        }
+
+        .complexity-table tr:nth-child(even) td {
+            background: #f8f9fa;
+        }
+
+        .output {
+            background: #1a202c;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            min-height: 50px;
+            border: 2px solid #2d3748;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            border-color: #fc8181;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border-color: #68d391;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Java Collections Framework</h1>
+            <p>Interactive Visual Learning Experience</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('list')">📋 List</button>
+            <button class="tab-btn" onclick="showTab('set')">🔗 Set</button>
+            <button class="tab-btn" onclick="showTab('map')">🗂️ Map</button>
+            <button class="tab-btn" onclick="showTab('queue')">⏳ Queue</button>
+            <button class="tab-btn" onclick="showTab('comparison')">📊 Comparison</button>
+        </div>
+
+        <!-- LIST DEMO -->
+        <div id="list" class="demo-section active">
+            <h2 class="section-title">📋 List Interface Demo</h2>
+            
+            <div class="info-panel">
+                <h3>ArrayList Characteristics</h3>
+                <p>Resizable array implementation. Allows duplicates, maintains insertion order, provides random access.</p>
+            </div>
+
+            <div class="characteristics">
+                <div class="characteristic">
+                    <div class="icon">📈</div>
+                    <h4>Dynamic Size</h4>
+                    <p>Grows automatically</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🎯</div>
+                    <h4>Random Access</h4>
+                    <p>O(1) get/set by index</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🔄</div>
+                    <h4>Duplicates Allowed</h4>
+                    <p>Same elements permitted</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">📝</div>
+                    <h4>Insertion Order</h4>
+                    <p>Maintains add sequence</p>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="listInput" placeholder="Enter element to add" />
+                <input type="number" id="listIndex" placeholder="Index (optional)" />
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="addToList()">➕ Add Element</button>
+                <button class="btn btn-success" onclick="addAtIndex()">📍 Add at Index</button>
+                <button class="btn btn-warning" onclick="removeFromList()">❌ Remove Element</button>
+                <button class="btn btn-danger" onclick="clearList()">🗑️ Clear All</button>
+                <button class="btn btn-primary" onclick="sortList()">🔤 Sort List</button>
+            </div>
+
+            <div id="listDisplay" class="collection-display">
+                <p style="color: #999;">Your ArrayList will appear here...</p>
+            </div>
+
+            <div class="output" id="listOutput">Ready to demonstrate ArrayList operations...</div>
+
+            <div class="code-example">
+// ArrayList Example
+ArrayList&lt;String&gt; fruits = new ArrayList&lt;&gt;();
+fruits.add("Apple");           // Add to end
+fruits.add(0, "Banana");       // Add at index
+fruits.get(1);                 // Get element at index 1
+fruits.remove("Apple");        // Remove by value
+fruits.size();                 // Get size
+Collections.sort(fruits);      // Sort the list
+            </div>
+
+            <table class="complexity-table">
+                <tr>
+                    <th>Operation</th>
+                    <th>ArrayList</th>
+                    <th>LinkedList</th>
+                </tr>
+                <tr>
+                    <td>Add (end)</td>
+                    <td>O(1) amortized</td>
+                    <td>O(1)</td>
+                </tr>
+                <tr>
+                    <td>Add (index)</td>
+                    <td>O(n)</td>
+                    <td>O(n)</td>
+                </tr>
+                <tr>
+                    <td>Get by index</td>
+                    <td>O(1)</td>
+                    <td>O(n)</td>
+                </tr>
+                <tr>
+                    <td>Remove by index</td>
+                    <td>O(n)</td>
+                    <td>O(n)</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- SET DEMO -->
+        <div id="set" class="demo-section">
+            <h2 class="section-title">🔗 Set Interface Demo</h2>
+            
+            <div class="info-panel">
+                <h3>HashSet vs TreeSet vs LinkedHashSet</h3>
+                <p>Sets ensure uniqueness but differ in ordering and performance characteristics.</p>
+            </div>
+
+            <div class="characteristics">
+                <div class="characteristic">
+                    <div class="icon">🚫</div>
+                    <h4>No Duplicates</h4>
+                    <p>Unique elements only</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🔍</div>
+                    <h4>Fast Lookup</h4>
+                    <p>O(1) contains operation</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🎲</div>
+                    <h4>HashSet</h4>
+                    <p>No order guarantee</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🌳</div>
+                    <h4>TreeSet</h4>
+                    <p>Natural sorted order</p>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="setInput" placeholder="Enter element to add" />
+                <select id="setType">
+                    <option value="hashset">HashSet</option>
+                    <option value="treeset">TreeSet</option>
+                    <option value="linkedhashset">LinkedHashSet</option>
+                </select>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="addToSet()">➕ Add Element</button>
+                <button class="btn btn-warning" onclick="removeFromSet()">❌ Remove Element</button>
+                <button class="btn btn-success" onclick="checkContains()">🔍 Contains?</button>
+                <button class="btn btn-danger" onclick="clearSet()">🗑️ Clear All</button>
+            </div>
+
+            <div id="setDisplay" class="collection-display">
+                <p style="color: #999;">Your Set will appear here...</p>
+            </div>
+
+            <div class="output" id="setOutput">Ready to demonstrate Set operations...</div>
+
+            <div class="code-example">
+// Set Examples
+HashSet&lt;String&gt; hashSet = new HashSet&lt;&gt;();
+TreeSet&lt;String&gt; treeSet = new TreeSet&lt;&gt;();
+LinkedHashSet&lt;String&gt; linkedSet = new LinkedHashSet&lt;&gt;();
+
+hashSet.add("Banana");         // No guaranteed order
+hashSet.add("Apple"); 
+hashSet.add("Cherry");
+
+treeSet.addAll(hashSet);       // Automatically sorted
+linkedSet.addAll(hashSet);     // Maintains insertion order
+            </div>
+        </div>
+
+        <!-- MAP DEMO -->
+        <div id="map" class="demo-section">
+            <h2 class="section-title">🗂️ Map Interface Demo</h2>
+            
+            <div class="info-panel">
+                <h3>Key-Value Pair Storage</h3>
+                <p>Maps store associations between keys and values. Keys must be unique.</p>
+            </div>
+
+            <div class="characteristics">
+                <div class="characteristic">
+                    <div class="icon">🔑</div>
+                    <h4>Unique Keys</h4>
+                    <p>No duplicate keys allowed</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">💎</div>
+                    <h4>Null Values</h4>
+                    <p>Values can be null</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">⚡</div>
+                    <h4>Fast Access</h4>
+                    <p>O(1) get/put operations</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🔄</div>
+                    <h4>Key-Value Pairs</h4>
+                    <p>Associated data storage</p>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="mapKey" placeholder="Enter key" />
+                <input type="text" id="mapValue" placeholder="Enter value" />
+                <select id="mapType">
+                    <option value="hashmap">HashMap</option>
+                    <option value="treemap">TreeMap</option>
+                    <option value="linkedhashmap">LinkedHashMap</option>
+                </select>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="putInMap()">➕ Put Entry</button>
+                <button class="btn btn-success" onclick="getFromMap()">🔍 Get Value</button>
+                <button class="btn btn-warning" onclick="removeFromMap()">❌ Remove Key</button>
+                <button class="btn btn-danger" onclick="clearMap()">🗑️ Clear All</button>
+            </div>
+
+            <div id="mapDisplay" class="collection-display">
+                <p style="color: #999;">Your Map entries will appear here...</p>
+            </div>
+
+            <div class="output" id="mapOutput">Ready to demonstrate Map operations...</div>
+
+            <div class="code-example">
+// Map Examples
+HashMap&lt;String, Integer&gt; studentMarks = new HashMap&lt;&gt;();
+studentMarks.put("Alice", 85);     // Add key-value pair
+studentMarks.put("Bob", 92);
+studentMarks.put("Charlie", 78);
+
+int aliceMarks = studentMarks.get("Alice");        // Get value by key
+boolean hasKey = studentMarks.containsKey("Bob");  // Check key exists
+Set&lt;String&gt; keys = studentMarks.keySet();          // Get all keys
+Collection&lt;Integer&gt; values = studentMarks.values(); // Get all values
+            </div>
+        </div>
+
+        <!-- QUEUE DEMO -->
+        <div id="queue" class="demo-section">
+            <h2 class="section-title">⏳ Queue Interface Demo</h2>
+            
+            <div class="info-panel">
+                <h3>FIFO and Priority-Based Processing</h3>
+                <p>Queues process elements in First-In-First-Out order, or based on priority.</p>
+            </div>
+
+            <div class="characteristics">
+                <div class="characteristic">
+                    <div class="icon">🚪</div>
+                    <h4>FIFO Order</h4>
+                    <p>First In, First Out</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">⭐</div>
+                    <h4>Priority Queue</h4>
+                    <p>Priority-based ordering</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🔄</div>
+                    <h4>Both Ends</h4>
+                    <p>Deque allows both ends</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">📊</div>
+                    <h4>Heap Structure</h4>
+                    <p>PriorityQueue uses heap</p>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="queueElement" placeholder="Enter element" />
+                <input type="number" id="queuePriority" placeholder="Priority (1-10)" min="1" max="10" />
+                <select id="queueType">
+                    <option value="queue">ArrayDeque (FIFO)</option>
+                    <option value="priority">PriorityQueue</option>
+                </select>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="offerToQueue()">➕ Offer</button>
+                <button class="btn btn-success" onclick="peekQueue()">👀 Peek</button>
+                <button class="btn btn-warning" onclick="pollQueue()">📤 Poll</button>
+                <button class="btn btn-danger" onclick="clearQueue()">🗑️ Clear All</button>
+            </div>
+
+            <div id="queueDisplay" class="collection-display">
+                <p style="color: #999;">Your Queue elements will appear here...</p>
+            </div>
+
+            <div class="output" id="queueOutput">Ready to demonstrate Queue operations...</div>
+
+            <div class="code-example">
+// Queue Examples
+Queue&lt;String&gt; queue = new ArrayDeque&lt;&gt;();
+queue.offer("First");          // Add to rear
+queue.offer("Second");
+queue.offer("Third");
+
+String front = queue.peek();   // View front element
+String removed = queue.poll(); // Remove and return front
+
+// PriorityQueue Example
+PriorityQueue&lt;Integer&gt; pq = new PriorityQueue&lt;&gt;();
+pq.offer(30);
+pq.offer(10);
+pq.offer(20);
+int smallest = pq.poll();      // Returns 10 (smallest)
+            </div>
+        </div>
+
+        <!-- COMPARISON -->
+        <div id="comparison" class="demo-section">
+            <h2 class="section-title">📊 Collections Comparison</h2>
+            
+            <div class="info-panel">
+                <h3>Choose the Right Collection</h3>
+                <p>Different collections excel at different operations. Choose based on your use case.</p>
+            </div>
+
+            <table class="complexity-table">
+                <tr>
+                    <th>Collection</th>
+                    <th>Duplicates</th>
+                    <th>Order</th>
+                    <th>Access Time</th>
+                    <th>Best Use Case</th>
+                </tr>
+                <tr>
+                    <td><strong>ArrayList</strong></td>
+                    <td>✅ Yes</td>
+                    <td>Insertion</td>
+                    <td>O(1) by index</td>
+                    <td>Random access, frequent reads</td>
+                </tr>
+                <tr>
+                    <td><strong>LinkedList</strong></td>
+                    <td>✅ Yes</td>
+                    <td>Insertion</td>
+                    <td>O(n) by index</td>
+                    <td>Frequent insertions/deletions</td>
+                </tr>
+                <tr>
+                    <td><strong>HashSet</strong></td>
+                    <td>❌ No</td>
+                    <td>No guarantee</td>
+                    <td>O(1) contains</td>
+                    <td>Fast uniqueness checks</td>
+                </tr>
+                <tr>
+                    <td><strong>TreeSet</strong></td>
+                    <td>❌ No</td>
+                    <td>Sorted</td>
+                    <td>O(log n)</td>
+                    <td>Sorted unique elements</td>
+                </tr>
+                <tr>
+                    <td><strong>HashMap</strong></td>
+                    <td>❌ Keys</td>
+                    <td>No guarantee</td>
+                    <td>O(1) get/put</td>
+                    <td>Fast key-value lookups</td>
+                </tr>
+                <tr>
+                    <td><strong>TreeMap</strong></td>
+                    <td>❌ Keys</td>
+                    <td>Sorted by keys</td>
+                    <td>O(log n)</td>
+                    <td>Sorted key-value pairs</td>
+                </tr>
+                <tr>
+                    <td><strong>PriorityQueue</strong></td>
+                    <td>✅ Yes</td>
+                    <td>Priority</td>
+                    <td>O(log n)</td>
+                    <td>Priority-based processing</td>
+                </tr>
+            </table>
+
+            <div class="characteristics">
+                <div class="characteristic">
+                    <div class="icon">🏃</div>
+                    <h4>Performance</h4>
+                    <p>Consider time complexity for your use case</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🧠</div>
+                    <h4>Memory</h4>
+                    <p>ArrayList: less overhead, LinkedList: more objects</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🔒</div>
+                    <h4>Thread Safety</h4>
+                    <p>Most collections are not thread-safe by default</p>
+                </div>
+                <div class="characteristic">
+                    <div class="icon">🎯</div>
+                    <h4>Use Case</h4>
+                    <p>Choose based on primary operations needed</p>
+                </div>
+            </div>
+
+            <div class="code-example">
+// Choosing the Right Collection
+
+// Need fast random access? Use ArrayList
+List&lt;String&gt; names = new ArrayList&lt;&gt;();
+
+// Need unique elements only? Use HashSet
+Set&lt;String&gt; uniqueEmails = new HashSet&lt;&gt;();
+
+// Need sorted unique elements? Use TreeSet
+Set&lt;Integer&gt; sortedScores = new TreeSet&lt;&gt;();
+
+// Need key-value mapping? Use HashMap
+Map&lt;String, Integer&gt; studentGrades = new HashMap&lt;&gt;();
+
+// Need priority-based processing? Use PriorityQueue
+Queue&lt;Task&gt; taskQueue = new PriorityQueue&lt;&gt;();
+
+// Need thread-safety? Use concurrent collections
+Map&lt;String, String&gt; safeMap = new ConcurrentHashMap&lt;&gt;();
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global collections for demos
+        let currentList = [];
+        let currentSet = new Set();
+        let currentMap = new Map();
+        let currentQueue = [];
+        let currentPriorityQueue = [];
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all sections
+            document.querySelectorAll('.demo-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        // LIST OPERATIONS
+        function addToList() {
+            const input = document.getElementById('listInput');
+            const value = input.value.trim();
+            
+            if (value) {
+                currentList.push(value);
+                input.value = '';
+                updateListDisplay();
+                updateOutput('listOutput', `✅ Added "${value}" to list. Size: ${currentList.length}`, 'success');
+            }
+        }
+
+        function addAtIndex() {
+            const input = document.getElementById('listInput');
+            const indexInput = document.getElementById('listIndex');
+            const value = input.value.trim();
+            const index = parseInt(indexInput.value);
+            
+            if (value && !isNaN(index) && index >= 0 && index <= currentList.length) {
+                currentList.splice(index, 0, value);
+                input.value = '';
+                indexInput.value = '';
+                updateListDisplay();
+                updateOutput('listOutput', `✅ Added "${value}" at index ${index}`, 'success');
+            } else {
+                updateOutput('listOutput', '❌ Invalid index or empty value', 'error');
+            }
+        }
+
+        function removeFromList() {
+            const input = document.getElementById('listInput');
+            const value = input.value.trim();
+            
+            if (value) {
+                const index = currentList.indexOf(value);
+                if (index > -1) {
+                    currentList.splice(index, 1);
+                    input.value = '';
+                    updateListDisplay();
+                    updateOutput('listOutput', `✅ Removed "${value}" from list`, 'success');
+                } else {
+                    updateOutput('listOutput', `❌ "${value}" not found in list`, 'error');
+                }
+            }
+        }
+
+        function clearList() {
+            currentList = [];
+            updateListDisplay();
+            updateOutput('listOutput', '🗑️ List cleared', 'success');
+        }
+
+        function sortList() {
+            currentList.sort();
+            updateListDisplay();
+            updateOutput('listOutput', '🔤 List sorted alphabetically', 'success');
+        }
+
+        function updateListDisplay() {
+            const display = document.getElementById('listDisplay');
+            
+            if (currentList.length === 0) {
+                display.innerHTML = '<p style="color: #999;">Your ArrayList is empty</p>';
+                return;
+            }
+            
+            display.innerHTML = currentList.map((item, index) => 
+                `<div class="collection-item" title="Index: ${index}">${item}</div>`
+            ).join('');
+        }
+
+        // SET OPERATIONS
+        function addToSet() {
+            const input = document.getElementById('setInput');
+            const value = input.value.trim();
+            
+            if (value) {
+                const sizeBefore = currentSet.size;
+                currentSet.add(value);
+                const sizeAfter = currentSet.size;
+                
+                input.value = '';
+                updateSetDisplay();
+                
+                if (sizeAfter > sizeBefore) {
+                    updateOutput('setOutput', `✅ Added "${value}" to set. Size: ${sizeAfter}`, 'success');
+                } else {
+                    updateOutput('setOutput', `ℹ️ "${value}" already exists in set`, 'info');
+                }
+            }
+        }
+
+        function removeFromSet() {
+            const input = document.getElementById('setInput');
+            const value = input.value.trim();
+            
+            if (value) {
+                const deleted = currentSet.delete(value);
+                input.value = '';
+                updateSetDisplay();
+                
+                if (deleted) {
+                    updateOutput('setOutput', `✅ Removed "${value}" from set`, 'success');
+                } else {
+                    updateOutput('setOutput', `❌ "${value}" not found in set`, 'error');
+                }
+            }
+        }
+
+        function checkContains() {
+            const input = document.getElementById('setInput');
+            const value = input.value.trim();
+            
+            if (value) {
+                const contains = currentSet.has(value);
+                updateOutput('setOutput', 
+                    `🔍 Set ${contains ? 'contains' : 'does not contain'} "${value}"`, 
+                    contains ? 'success' : 'info'
+                );
+            }
+        }
+
+        function clearSet() {
+            currentSet.clear();
+            updateSetDisplay();
+            updateOutput('setOutput', '🗑️ Set cleared', 'success');
+        }
+
+        function updateSetDisplay() {
+            const display = document.getElementById('setDisplay');
+            const setType = document.getElementById('setType').value;
+            
+            if (currentSet.size === 0) {
+                display.innerHTML = '<p style="color: #999;">Your Set is empty</p>';
+                return;
+            }
+            
+            let items = Array.from(currentSet);
+            
+            // Simulate different set behaviors
+            if (setType === 'treeset') {
+                items.sort();
+            } else if (setType === 'hashset') {
+                // Simulate random order for HashSet
+                items = items.sort(() => Math.random() - 0.5);
+            }
+            // linkedhashset maintains insertion order (default)
+            
+            display.innerHTML = items.map(item => 
+                `<div class="collection-item">${item}</div>`
+            ).join('') + 
+            `<div style="width: 100%; text-align: center; margin-top: 10px; color: #666;">
+                ${setType.toUpperCase()} - ${items.length} unique elements
+            </div>`;
+        }
+
+        // MAP OPERATIONS
+        function putInMap() {
+            const keyInput = document.getElementById('mapKey');
+            const valueInput = document.getElementById('mapValue');
+            const key = keyInput.value.trim();
+            const value = valueInput.value.trim();
+            
+            if (key && value) {
+                const hadKey = currentMap.has(key);
+                currentMap.set(key, value);
+                
+                keyInput.value = '';
+                valueInput.value = '';
+                updateMapDisplay();
+                
+                const action = hadKey ? 'Updated' : 'Added';
+                updateOutput('mapOutput', `✅ ${action} entry: ${key} → ${value}. Size: ${currentMap.size}`, 'success');
+            }
+        }
+
+        function getFromMap() {
+            const keyInput = document.getElementById('mapKey');
+            const key = keyInput.value.trim();
+            
+            if (key) {
+                const value = currentMap.get(key);
+                
+                if (value !== undefined) {
+                    updateOutput('mapOutput', `🔍 Key "${key}" → Value "${value}"`, 'success');
+                } else {
+                    updateOutput('mapOutput', `❌ Key "${key}" not found`, 'error');
+                }
+            }
+        }
+
+        function removeFromMap() {
+            const keyInput = document.getElementById('mapKey');
+            const key = keyInput.value.trim();
+            
+            if (key) {
+                const deleted = currentMap.delete(key);
+                keyInput.value = '';
+                updateMapDisplay();
+                
+                if (deleted) {
+                    updateOutput('mapOutput', `✅ Removed key "${key}" from map`, 'success');
+                } else {
+                    updateOutput('mapOutput', `❌ Key "${key}" not found`, 'error');
+                }
+            }
+        }
+
+        function clearMap() {
+            currentMap.clear();
+            updateMapDisplay();
+            updateOutput('mapOutput', '🗑️ Map cleared', 'success');
+        }
+
+        function updateMapDisplay() {
+            const display = document.getElementById('mapDisplay');
+            const mapType = document.getElementById('mapType').value;
+            
+            if (currentMap.size === 0) {
+                display.innerHTML = '<p style="color: #999;">Your Map is empty</p>';
+                return;
+            }
+            
+            let entries = Array.from(currentMap.entries());
+            
+            // Simulate different map behaviors
+            if (mapType === 'treemap') {
+                entries.sort((a, b) => a[0].localeCompare(b[0]));
+            } else if (mapType === 'hashmap') {
+                // Simulate random order for HashMap
+                entries = entries.sort(() => Math.random() - 0.5);
+            }
+            // linkedhashmap maintains insertion order (default)
+            
+            display.innerHTML = entries.map(([key, value]) => 
+                `<div class="collection-item map-item">
+                    <span class="key">${key}</span>
+                    <span>→</span>
+                    <span>${value}</span>
+                </div>`
+            ).join('') + 
+            `<div style="width: 100%; text-align: center; margin-top: 10px; color: #666;">
+                ${mapType.toUpperCase()} - ${entries.length} entries
+            </div>`;
+        }
+
+        // QUEUE OPERATIONS
+        function offerToQueue() {
+            const elementInput = document.getElementById('queueElement');
+            const priorityInput = document.getElementById('queuePriority');
+            const queueType = document.getElementById('queueType').value;
+            const element = elementInput.value.trim();
+            
+            if (element) {
+                if (queueType === 'priority') {
+                    const priority = parseInt(priorityInput.value) || 5;
+                    currentPriorityQueue.push({element, priority});
+                    currentPriorityQueue.sort((a, b) => a.priority - b.priority);
+                } else {
+                    currentQueue.push(element);
+                }
+                
+                elementInput.value = '';
+                priorityInput.value = '';
+                updateQueueDisplay();
+                updateOutput('queueOutput', `✅ Added "${element}" to queue`, 'success');
+            }
+        }
+
+        function peekQueue() {
+            const queueType = document.getElementById('queueType').value;
+            let frontElement;
+            
+            if (queueType === 'priority') {
+                frontElement = currentPriorityQueue.length > 0 ? currentPriorityQueue[0].element : null;
+            } else {
+                frontElement = currentQueue.length > 0 ? currentQueue[0] : null;
+            }
+            
+            if (frontElement) {
+                updateOutput('queueOutput', `👀 Front element: "${frontElement}"`, 'success');
+            } else {
+                updateOutput('queueOutput', '❌ Queue is empty', 'error');
+            }
+        }
+
+        function pollQueue() {
+            const queueType = document.getElementById('queueType').value;
+            let polledElement;
+            
+            if (queueType === 'priority') {
+                if (currentPriorityQueue.length > 0) {
+                    polledElement = currentPriorityQueue.shift().element;
+                }
+            } else {
+                polledElement = currentQueue.shift();
+            }
+            
+            updateQueueDisplay();
+            
+            if (polledElement) {
+                updateOutput('queueOutput', `📤 Polled: "${polledElement}"`, 'success');
+            } else {
+                updateOutput('queueOutput', '❌ Queue is empty', 'error');
+            }
+        }
+
+        function clearQueue() {
+            currentQueue = [];
+            currentPriorityQueue = [];
+            updateQueueDisplay();
+            updateOutput('queueOutput', '🗑️ Queue cleared', 'success');
+        }
+
+        function updateQueueDisplay() {
+            const display = document.getElementById('queueDisplay');
+            const queueType = document.getElementById('queueType').value;
+            
+            const activeQueue = queueType === 'priority' ? currentPriorityQueue : currentQueue;
+            
+            if (activeQueue.length === 0) {
+                display.innerHTML = '<p style="color: #999;">Your Queue is empty</p>';
+                return;
+            }
+            
+            if (queueType === 'priority') {
+                display.innerHTML = activeQueue.map((item, index) => 
+                    `<div class="collection-item queue-item" data-priority="${item.priority}">
+                        ${item.element}
+                    </div>`
+                ).join('') + 
+                `<div style="width: 100%; text-align: center; margin-top: 10px; color: #666;">
+                    PriorityQueue - ${activeQueue.length} elements (sorted by priority)
+                </div>`;
+            } else {
+                display.innerHTML = activeQueue.map((item, index) => 
+                    `<div class="collection-item ${index === 0 ? 'queue-item' : ''}" 
+                         style="${index === 0 ? 'border: 2px solid #ff6b6b;' : ''}">
+                        ${item} ${index === 0 ? '(FRONT)' : ''}
+                    </div>`
+                ).join('') + 
+                `<div style="width: 100%; text-align: center; margin-top: 10px; color: #666;">
+                    ArrayDeque - ${activeQueue.length} elements (FIFO order)
+                </div>`;
+            }
+        }
+
+        // UTILITY FUNCTIONS
+        function updateOutput(outputId, message, type = 'info') {
+            const output = document.getElementById(outputId);
+            output.className = `output ${type}`;
+            output.textContent = message;
+            
+            // Auto-clear after 5 seconds
+            setTimeout(() => {
+                output.className = 'output';
+                output.textContent = 'Ready for next operation...';
+            }, 5000);
+        }
+
+        // Initialize displays
+        updateListDisplay();
+        updateSetDisplay();
+        updateMapDisplay();
+        updateQueueDisplay();
+    </script>
+</body>
+</html>

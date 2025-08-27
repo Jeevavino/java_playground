@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Exception Handling - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            color: #667eea;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .demo-section {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .demo-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff512f, #dd2476);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input, select, textarea {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            transition: border-color 0.3s ease;
+            min-width: 150px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #667eea;
+        }
+
+        .output {
+            background: #1a202c;
+            color: #68d391;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            min-height: 100px;
+            border: 2px solid #2d3748;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            border-color: #fc8181;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border-color: #68d391;
+        }
+
+        .warning {
+            background: #fefcbf;
+            color: #d69e2e;
+            border-color: #f6e05e;
+        }
+
+        .code-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-example::before {
+            content: 'Java Code';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: #4a5568;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .stack-trace {
+            background: #2d1b69;
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            border-left: 4px solid #ff6b6b;
+            overflow-x: auto;
+        }
+
+        .exception-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+
+        .exception-type {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .exception-message {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .propagation-chain {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .method-call {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            position: relative;
+            animation: slideIn 0.5s ease;
+        }
+
+        .method-call.error {
+            background: linear-gradient(90deg, #ff512f, #dd2476);
+        }
+
+        .method-call::after {
+            content: '↓';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            color: #667eea;
+        }
+
+        .method-call:last-child::after {
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .multi-catch-demo {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .recovery-strategy {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #2196f3;
+        }
+
+        .finally-demo {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .comparison-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            background: white;
+        }
+
+        .comparison-table tr:nth-child(even) td {
+            background: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Java Exception Handling</h1>
+            <p>Interactive Learning Experience - From Basics to Advanced</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('basic')">🚀 Basic Try-Catch</button>
+            <button class="tab-btn" onclick="showTab('multicatch')">🔀 Multi-Catch</button>
+            <button class="tab-btn" onclick="showTab('stacktrace')">📋 Stack Traces</button>
+            <button class="tab-btn" onclick="showTab('propagation')">🔄 Propagation</button>
+            <button class="tab-btn" onclick="showTab('recovery')">🛠️ Recovery</button>
+            <button class="tab-btn" onclick="showTab('unhandled')">💥 Unhandled</button>
+        </div>
+
+        <!-- BASIC TRY-CATCH -->
+        <div id="basic" class="demo-section active">
+            <h2 class="section-title">🚀 Basic Exception Handling</h2>
+            
+            <div class="input-group">
+                <input type="number" id="num1" placeholder="Enter first number" value="10" />
+                <input type="number" id="num2" placeholder="Enter second number" value="0" />
+                <select id="operation">
+                    <option value="divide">Division</option>
+                    <option value="parse">Parse String</option>
+                    <option value="array">Array Access</option>
+                </select>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="performOperation()">🔥 Execute Operation</button>
+                <button class="btn btn-warning" onclick="performOperationUnsafe()">💥 Execute Without Try-Catch</button>
+                <button class="btn btn-success" onclick="clearOutput('basicOutput')">🧹 Clear Output</button>
+            </div>
+
+            <div class="output" id="basicOutput">Click "Execute Operation" to see safe exception handling in action...</div>
+
+            <div class="code-example">
+// Basic Exception Handling Example
+try {
+    int result = num1 / num2;  // May throw ArithmeticException
+    System.out.println("Result: " + result);
+} catch (ArithmeticException e) {
+    System.out.println("Error: " + e.getMessage());
+    // Handle the exception gracefully
+} finally {
+    System.out.println("Cleanup code always runs");
+}
+            </div>
+        </div>
+
+        <!-- MULTI-CATCH -->
+        <div id="multicatch" class="demo-section">
+            <h2 class="section-title">🔀 Multi-Catch Blocks (JDK 7+)</h2>
+            
+            <div class="input-group">
+                <input type="text" id="multiInput" placeholder="Enter data" />
+                <select id="multiOperation">
+                    <option value="parseAndDivide">Parse & Divide</option>
+                    <option value="arrayAndParse">Array & Parse</option>
+                    <option value="fileAndSQL">File & SQL Operations</option>
+                </select>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="demonstrateMultiCatch()">🎯 Test Multi-Catch</button>
+                <button class="btn btn-success" onclick="showMultiCatchComparison()">📊 Compare Approaches</button>
+                <button class="btn btn-warning" onclick="clearOutput('multiOutput')">🧹 Clear</button>
+            </div>
+
+            <div class="output" id="multiOutput">Multi-catch demo ready...</div>
+
+            <div class="multi-catch-demo">
+                <h3>🔥 JDK 7+ Multi-Catch Syntax:</h3>
+                <div class="code-example">
+// Multi-catch block (JDK 7+)
+try {
+    // Operations that can throw multiple exception types
+    int number = Integer.parseInt(input);
+    int result = 100 / number;
+    String[] array = {"a", "b"};
+    array[number] = "value";
+} catch (NumberFormatException | ArithmeticException | ArrayIndexOutOfBoundsException e) {
+    // Single block handles multiple related exceptions
+    System.out.println("Operation failed: " + e.getClass().getSimpleName());
+    System.out.println("Error: " + e.getMessage());
+}
+                </div>
+            </div>
+
+            <div class="comparison-table">
+                <tr>
+                    <th>Approach</th>
+                    <th>Code Lines</th>
+                    <th>Maintainability</th>
+                    <th>Best For</th>
+                </tr>
+                <tr>
+                    <td>Multiple Catch Blocks</td>
+                    <td>More</td>
+                    <td>Complex</td>
+                    <td>Different handling logic</td>
+                </tr>
+                <tr>
+                    <td>Multi-Catch Block</td>
+                    <td>Fewer</td>
+                    <td>Simple</td>
+                    <td>Same handling logic</td>
+                </tr>
+            </div>
+        </div>
+
+        <!-- STACK TRACES -->
+        <div id="stacktrace" class="demo-section">
+            <h2 class="section-title">📋 Stack Traces & Debugging</h2>
+            
+            <div class="controls">
+                <button class="btn btn-danger" onclick="generateStackOverflow()">💀 Stack Overflow</button>
+                <button class="btn btn-warning" onclick="generateNullPointer()">❌ Null Pointer</button>
+                <button class="btn btn-primary" onclick="generateChainedException()">🔗 Chained Exception</button>
+                <button class="btn btn-success" onclick="clearOutput('stackOutput')">🧹 Clear</button>
+            </div>
+
+            <div class="output" id="stackOutput">Click buttons above to generate different exceptions and see their stack traces...</div>
+
+            <div class="exception-card">
+                <div class="exception-type">📖 How to Read Stack Traces:</div>
+                <div class="exception-message">
+                    <strong>1. Exception Type:</strong> The class name of the exception<br>
+                    <strong>2. Message:</strong> Descriptive error message<br>
+                    <strong>3. Stack Trace:</strong> Method call chain (read bottom to top)<br>
+                    <strong>4. Line Numbers:</strong> Exact location where error occurred<br>
+                    <strong>5. Caused By:</strong> Root cause in chained exceptions
+                </div>
+            </div>
+
+            <div class="code-example">
+// Stack Trace Example
+Exception in thread "main" java.lang.ArithmeticException: / by zero
+    at ExceptionDemo.divide(ExceptionDemo.java:15)      ← Error occurred here
+    at ExceptionDemo.calculate(ExceptionDemo.java:10)   ← Called from here
+    at ExceptionDemo.main(ExceptionDemo.java:5)         ← Started from here
+
+// Reading: main() called calculate() which called divide() where error occurred
+            </div>
+        </div>
+
+        <!-- PROPAGATION -->
+        <div id="propagation" class="demo-section">
+            <h2 class="section-title">🔄 Exception Propagation</h2>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="demonstratePropagation()">🚀 Start Method Chain</button>
+                <button class="btn btn-warning" onclick="demonstrateHandledPropagation()">✅ Handled Propagation</button>
+                <button class="btn btn-danger" onclick="demonstrateUnhandledPropagation()">💥 Unhandled Propagation</button>
+                <button class="btn btn-success" onclick="clearPropagation()">🧹 Clear</button>
+            </div>
+
+            <div id="propagationChain" class="propagation-chain"></div>
+            <div class="output" id="propagationOutput">Click buttons to see how exceptions propagate through method call chains...</div>
+
+            <div class="code-example">
+// Exception Propagation Example
+public void method1() {
+    try {
+        method2();  // Exception propagates from method4 → method3 → method2 → method1
+    } catch (RuntimeException e) {
+        System.out.println("Caught in method1: " + e.getMessage());
+        // Exception stops propagating here
+    }
+}
+
+public void method2() throws RuntimeException {
+    method3();  // Exception propagates up
+}
+
+public void method3() throws RuntimeException {
+    method4();  // Exception propagates up
+}
+
+public void method4() throws RuntimeException {
+    throw new RuntimeException("Exception originated here");  // Exception starts here
+}
+            </div>
+        </div>
+
+        <!-- RECOVERY STRATEGIES -->
+        <div id="recovery" class="demo-section">
+            <h2 class="section-title">🛠️ Exception Recovery Strategies</h2>
+            
+            <div class="input-group">
+                <input type="text" id="recoveryInput" placeholder="Enter operation data" value="unstable_service" />
+                <select id="recoveryStrategy">
+                    <option value="retry">Retry Mechanism</option>
+                    <option value="fallback">Fallback Strategy</option>
+                    <option value="circuit">Circuit Breaker</option>
+                </select>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="demonstrateRecovery()">🔄 Execute Recovery</button>
+                <button class="btn btn-warning" onclick="demonstrateFinally()">🧹 Finally Block Demo</button>
+                <button class="btn btn-success" onclick="clearOutput('recoveryOutput')">🧹 Clear</button>
+            </div>
+
+            <div class="output" id="recoveryOutput">Recovery strategies demo ready...</div>
+
+            <div class="recovery-strategy">
+                <h4>🔄 Retry Mechanism:</h4>
+                <p>Automatically retry failed operations with exponential backoff</p>
+            </div>
+
+            <div class="recovery-strategy">
+                <h4>🔧 Fallback Strategy:</h4>
+                <p>Use alternative data source when primary fails</p>
+            </div>
+
+            <div class="finally-demo">
+                <h4>🧹 Finally Block:</h4>
+                <p>Always executes for cleanup, even if exception occurs or return statement is hit</p>
+            </div>
+
+            <div class="code-example">
+// Recovery Strategy Examples
+
+// 1. Retry Mechanism
+int maxRetries = 3;
+for (int i = 0; i < maxRetries; i++) {
+    try {
+        result = unstableOperation();
+        break; // Success, exit retry loop
+    } catch (TemporaryException e) {
+        if (i == maxRetries - 1) throw e; // Last attempt failed
+        Thread.sleep(1000 * (i + 1)); // Exponential backoff
+    }
+}
+
+// 2. Fallback Strategy
+try {
+    data = primaryDataSource.getData();
+} catch (DataSourceException e) {
+    try {
+        data = backupDataSource.getData();
+    } catch (DataSourceException e2) {
+        data = getDefaultData(); // Last resort
+    }
+}
+
+// 3. Finally Block
+FileWriter writer = null;
+try {
+    writer = new FileWriter("file.txt");
+    writer.write("data");
+} catch (IOException e) {
+    handleError(e);
+} finally {
+    if (writer != null) {
+        writer.close(); // Always cleanup resources
+    }
+}
+            </div>
+        </div>
+
+        <!-- UNHANDLED EXCEPTIONS -->
+        <div id="unhandled" class="demo-section">
+            <h2 class="section-title">💥 Unhandled Exceptions & Consequences</h2>
+            
+            <div class="controls">
+                <button class="btn btn-danger" onclick="simulateUnhandled()">💥 Simulate Unhandled</button>
+                <button class="btn btn-warning" onclick="showUnhandledConsequences()">⚠️ Show Consequences</button>
+                <button class="btn btn-success" onclick="showBestPractices()">✅ Best Practices</button>
+                <button class="btn btn-primary" onclick="clearOutput('unhandledOutput')">🧹 Clear</button>
+            </div>
+
+            <div class="output" id="unhandledOutput">Learn what happens when exceptions are not handled properly...</div>
+
+            <div class="exception-card">
+                <div class="exception-type">💥 What Happens Without Exception Handling:</div>
+                <div class="exception-message">
+                    <strong>1. JVM Default Handler:</strong> Takes over when no catch block found<br>
+                    <strong>2. Stack Trace Print:</strong> Error details printed to System.err<br>
+                    <strong>3. Thread Termination:</strong> Current thread stops abnormally<br>
+                    <strong>4. No Cleanup:</strong> Finally blocks and cleanup code don't run<br>
+                    <strong>5. Poor UX:</strong> Users see cryptic technical error messages<br>
+                    <strong>6. Application Instability:</strong> Unexpected program termination
+                </div>
+            </div>
+
+            <div class="code-example">
+// ❌ BAD: Unhandled Exception
+public void badExample() {
+    int result = 10 / 0;  // ArithmeticException crashes program
+    System.out.println("This line never executes");
+    // No cleanup, no user-friendly message, program dies
+}
+
+// ✅ GOOD: Properly Handled Exception
+public void goodExample() {
+    try {
+        int result = 10 / 0;
+        System.out.println("Result: " + result);
+    } catch (ArithmeticException e) {
+        System.out.println("Cannot divide by zero. Please try again.");
+        // User-friendly message, program continues
+    } finally {
+        System.out.println("Cleanup completed");
+        // Always runs for resource cleanup
+    }
+    System.out.println("Program continues normally");
+}
+
+// 🎯 BEST PRACTICES:
+// • Always handle checked exceptions
+// • Use specific exception types in catch blocks
+// • Provide meaningful error messages to users
+// • Log exceptions for debugging
+// • Use finally blocks for cleanup
+// • Consider exception chaining for context
+            </div>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>Unhandled Exceptions</th>
+                    <th>Properly Handled</th>
+                </tr>
+                <tr>
+                    <td>Program Stability</td>
+                    <td>❌ Crashes unexpectedly</td>
+                    <td>✅ Continues gracefully</td>
+                </tr>
+                <tr>
+                    <td>User Experience</td>
+                    <td>❌ Technical error messages</td>
+                    <td>✅ User-friendly messages</td>
+                </tr>
+                <tr>
+                    <td>Resource Cleanup</td>
+                    <td>❌ May leak resources</td>
+                    <td>✅ Proper cleanup in finally</td>
+                </tr>
+                <tr>
+                    <td>Debugging</td>
+                    <td>❌ Difficult to trace issues</td>
+                    <td>✅ Logged with context</td>
+                </tr>
+                <tr>
+                    <td>Maintainability</td>
+                    <td>❌ Hard to maintain</td>
+                    <td>✅ Easy to maintain</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for demo state
+        let propagationStep = 0;
+        let retryCount = 0;
+
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.demo-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Basic Exception Handling
+        function performOperation() {
+            const num1 = parseFloat(document.getElementById('num1').value) || 10;
+            const num2 = parseFloat(document.getElementById('num2').value) || 0;
+            const operation = document.getElementById('operation').value;
+            const output = document.getElementById('basicOutput');
+
+            let result = '';
+            result += '🔄 Executing operation with try-catch...\n\n';
+            result += 'try {\n';
+
+            try {
+                switch (operation) {
+                    case 'divide':
+                        result += `    int result = ${num1} / ${num2};\n`;
+                        const divResult = num1 / num2;
+                        if (!isFinite(divResult)) {
+                            throw new Error('ArithmeticException: Division by zero');
+                        }
+                        result += `    System.out.println("Result: ${divResult}");\n`;
+                        break;
+                    
+                    case 'parse':
+                        result += `    int number = Integer.parseInt("${num1}abc");\n`;
+                        throw new Error('NumberFormatException: For input string: "' + num1 + 'abc"');
+                    
+                    case 'array':
+                        result += `    int[] arr = {1, 2, 3};\n`;
+                        result += `    int value = arr[${Math.floor(num1)}];\n`;
+                        if (Math.floor(num1) >= 3 || Math.floor(num1) < 0) {
+                            throw new Error('ArrayIndexOutOfBoundsException: Index ' + Math.floor(num1) + ' out of bounds for length 3');
+                        }
+                        result += `    System.out.println("Value: ${[1,2,3][Math.floor(num1)]}");\n`;
+                        break;
+                }
+                result += '} catch (Exception e) {\n';
+                result += '    // This block did not execute - no exception occurred\n';
+                result += '} finally {\n';
+                result += '    System.out.println("Finally block always executes");\n';
+                result += '}\n\n';
+                result += '✅ Operation completed successfully!\n';
+                result += '📝 Program continues normally after try-catch block.';
+                
+                output.className = 'output success';
+                
+            } catch (e) {
+                result += '} catch (' + e.message.split(':')[0] + ' e) {\n';
+                result += '    System.err.println("Exception caught: " + e.getMessage());\n';
+                result += '    // Handle exception gracefully\n';
+                result += '} finally {\n';
+                result += '    System.out.println("Finally block always executes");\n';
+                result += '}\n\n';
+                result += '🚨 Exception Details:\n';
+                result += 'Type: ' + e.message.split(':')[0] + '\n';
+                result += 'Message: ' + e.message.split(':')[1] + '\n\n';
+                result += '✅ Exception handled gracefully!\n';
+                result += '📝 Program continues normally due to exception handling.';
+                
+                output.className = 'output warning';
+            }
+
+            output.textContent = result;
+        }
+
+        function performOperationUnsafe() {
+            const num1 = parseFloat(document.getElementById('num1').value) || 10;
+            const num2 = parseFloat(document.getElementById('num2').value) || 0;
+            const output = document.getElementById('basicOutput');
+
+            let result = '';
+            result += '💥 Executing operation WITHOUT try-catch...\n\n';
+            result += 'public void unsafeOperation() {\n';
+            result += `    int result = ${num1} / ${num2};  // No exception handling!\n`;
+            result += '    System.out.println("Result: " + result);\n';
+            result += '    System.out.println("This line will NEVER execute");\n';
+            result += '}\n\n';
+
+            if (num2 === 0) {
+                result += '💀 PROGRAM CRASH SIMULATION:\n';
+                result += '═══════════════════════════════════════\n';
+                result += 'Exception in thread "main" java.lang.ArithmeticException: / by zero\n';
+                result += '    at ExceptionDemo.unsafeOperation(ExceptionDemo.java:15)\n';
+                result += '    at ExceptionDemo.main(ExceptionDemo.java:8)\n\n';
+                result += '🚨 CONSEQUENCES:\n';
+                result += '• Program terminates abnormally\n';
+                result += '• No cleanup code executes\n';
+                result += '• User sees cryptic error message\n';
+                result += '• Application becomes unstable\n';
+                result += '• Resources may leak\n';
+                result += '• Poor user experience\n\n';
+                result += '💡 This is why exception handling is crucial!';
+                
+                output.className = 'output error';
+            } else {
+                result += `✅ Result: ${num1 / num2}\n`;
+                result += '📝 No exception occurred, so program continues normally.';
+                output.className = 'output success';
+            }
+
+            output.textContent = result;
+        }
+
+        // Multi-catch demonstration
+        function demonstrateMultiCatch() {
+            const input = document.getElementById('multiInput').value || 'test';
+            const operation = document.getElementById('multiOperation').value;
+            const output = document.getElementById('multiOutput');
+
+            let result = '';
+            result += '🎯 Multi-Catch Block Demonstration\n\n';
+            result += 'try {\n';
+
+            try {
+                switch (operation) {
+                    case 'parseAndDivide':
+                        result += `    int number = Integer.parseInt("${input}");\n`;
+                        const num = parseInt(input);
+                        if (isNaN(num)) throw new Error('NumberFormatException: For input string: "' + input + '"');
+                        
+                        result += `    int result = 100 / ${num};\n`;
+                        if (num === 0) throw new Error('ArithmeticException: / by zero');
+                        
+                        result += `    System.out.println("Result: ${100 / num}");\n`;
+                        break;
+                        
+                    case 'arrayAndParse':
+                        result += `    String[] data = {"10", "20", "30"};\n`;
+                        result += `    int index = Integer.parseInt("${input}");\n`;
+                        const idx = parseInt(input);
+                        if (isNaN(idx)) throw new Error('NumberFormatException: For input string: "' + input + '"');
+                        
+                        result += `    String value = data[${idx}];\n`;
+                        if (idx >= 3 || idx < 0) throw new Error('ArrayIndexOutOfBoundsException: Index ' + idx + ' out of bounds');
+                        
+                        result += `    System.out.println("Value: ${['10','20','30'][idx]}");\n`;
+                        break;
+                        
+                    case 'fileAndSQL':
+                        result += '    FileReader file = new FileReader("' + input + '");\n';
+                        result += '    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost");\n';
+                        if (input.includes('invalid') || input.includes('missing')) {
+                            throw new Error('IOException: File not found: ' + input);
+                        }
+                        throw new Error('SQLException: Connection refused');
+                }
+                
+                result += '\n} catch (NumberFormatException | ArithmeticException | ArrayIndexOutOfBoundsException e) {\n';
+                result += '    System.out.println("Math/Parse Error: " + e.getMessage());\n';
+                result += '} catch (IOException | SQLException e) {\n';
+                result += '    System.out.println("Resource Error: " + e.getMessage());\n';
+                result += '}\n\n';
+                result += '✅ Operation completed successfully!';
+                
+                output.className = 'output success';
+                
+            } catch (e) {
+                const exceptionType = e.message.split(':')[0];
+                
+                if (['NumberFormatException', 'ArithmeticException', 'ArrayIndexOutOfBoundsException'].includes(exceptionType)) {
+                    result += '\n} catch (NumberFormatException | ArithmeticException | ArrayIndexOutOfBoundsException e) {\n';
+                    result += '    System.out.println("Math/Parse Error: " + e.getMessage());\n';
+                    result += '    // Single block handles multiple related exceptions\n';
+                } else {
+                    result += '\n} catch (IOException | SQLException e) {\n';
+                    result += '    System.out.println("Resource Error: " + e.getMessage());\n';
+                    result += '    // Single block handles multiple resource exceptions\n';
+                }
+                
+                result += '}\n\n';
+                result += '🎯 Multi-Catch Block Executed!\n';
+                result += 'Exception Type: ' + exceptionType + '\n';
+                result += 'Message: ' + e.message.split(':').slice(1).join(':') + '\n\n';
+                result += '💡 Benefits of Multi-Catch:\n';
+                result += '• Reduced code duplication\n';
+                result += '• Cleaner, more readable code\n';
+                result += '• Same handling logic for related exceptions\n';
+                result += '• Better maintainability';
+                
+                output.className = 'output warning';
+            }
+
+            output.textContent = result;
+        }
+
+        function showMultiCatchComparison() {
+            const output = document.getElementById('multiOutput');
+            
+            let result = '';
+            result += '📊 Multi-Catch vs Multiple Catch Comparison\n\n';
+            result += '❌ OLD WAY (Multiple Catch Blocks):\n';
+            result += '═══════════════════════════════════════════\n';
+            result += 'try {\n';
+            result += '    // risky operations\n';
+            result += '} catch (NumberFormatException e) {\n';
+            result += '    System.out.println("Error: " + e.getMessage());\n';
+            result += '    logError(e);\n';
+            result += '    showUserMessage();\n';
+            result += '} catch (ArithmeticException e) {\n';
+            result += '    System.out.println("Error: " + e.getMessage());  // DUPLICATE!\n';
+            result += '    logError(e);                                      // DUPLICATE!\n';
+            result += '    showUserMessage();                                // DUPLICATE!\n';
+            result += '} catch (ArrayIndexOutOfBoundsException e) {\n';
+            result += '    System.out.println("Error: " + e.getMessage());  // DUPLICATE!\n';
+            result += '    logError(e);                                      // DUPLICATE!\n';
+            result += '    showUserMessage();                                // DUPLICATE!\n';
+            result += '}\n\n';
+            
+            result += '✅ NEW WAY (Multi-Catch Block - JDK 7+):\n';
+            result += '═════════════════════════════════════════════\n';
+            result += 'try {\n';
+            result += '    // risky operations\n';
+            result += '} catch (NumberFormatException | ArithmeticException | ArrayIndexOutOfBoundsException e) {\n';
+            result += '    System.out.println("Error: " + e.getMessage());\n';
+            result += '    logError(e);\n';
+            result += '    showUserMessage();\n';
+            result += '    // Single block, no duplication!\n';
+            result += '}\n\n';
+            
+            result += '🎯 ADVANTAGES:\n';
+            result += '• 70% less code\n';
+            result += '• No duplicate handling logic\n';
+            result += '• Better maintainability\n';
+            result += '• Cleaner bytecode\n';
+            result += '• Exception variable is implicitly final\n\n';
+            
+            result += '⚠️ WHEN TO USE:\n';
+            result += '✅ Same handling logic for all exceptions\n';
+            result += '✅ Related exception types (I/O, Math, etc.)\n';
+            result += '❌ Different recovery strategies needed\n';
+            result += '❌ Exception-specific logging required';
+
+            output.textContent = result;
+            output.className = 'output';
+        }
+
+        // Stack trace demonstrations
+        function generateStackOverflow() {
+            const output = document.getElementById('stackOutput');
+            
+            let result = '';
+            result += '💀 Stack Overflow Error Demonstration\n\n';
+            result += 'public void causeStackOverflow() {\n';
+            result += '    recursionCount++;\n';
+            result += '    causeStackOverflow();  // Infinite recursion!\n';
+            result += '}\n\n';
+            result += '🚨 SIMULATED STACK OVERFLOW:\n';
+            result += '═══════════════════════════════════════\n';
+            result += 'Exception in thread "main" java.lang.StackOverflowError\n';
+            result += '    at StackDemo.causeStackOverflow(StackDemo.java:25)\n';
+            result += '    at StackDemo.causeStackOverflow(StackDemo.java:25)\n';
+            result += '    at StackDemo.causeStackOverflow(StackDemo.java:25)\n';
+            result += '    at StackDemo.causeStackOverflow(StackDemo.java:25)\n';
+            result += '    ... 15,847 more\n\n';
+            
+            result += '📊 ANALYSIS:\n';
+            result += '• Recursion depth reached: ~15,847 calls\n';
+            result += '• Each method call adds a stack frame\n';
+            result += '• JVM ran out of stack space\n';
+            result += '• Same method repeated infinitely\n';
+            result += '• Line 25 is where the recursive call happens\n\n';
+            
+            result += '🛠️ SOLUTIONS:\n';
+            result += '• Add base case to stop recursion\n';
+            result += '• Use iteration instead of recursion\n';
+            result += '• Increase stack size: -Xss2m';
+
+            output.textContent = result;
+            output.className = 'output error';
+        }
+
+        function generateNullPointer() {
+            const output = document.getElementById('stackOutput');
+            
+            let result = '';
+            result += '❌ Null Pointer Exception Demonstration\n\n';
+            result += 'public void processData() {\n';
+            result += '    String data = null;\n';
+            result += '    int length = data.length();  // NPE here!\n';
+            result += '}\n\n';
+            result += '🚨 STACK TRACE:\n';
+            result += '═══════════════════════════════════════\n';
+            result += 'Exception in thread "main" java.lang.NullPointerException\n';
+            result += '    at DataProcessor.processData(DataProcessor.java:42)     ← ERROR HERE\n';
+            result += '    at DataProcessor.handleRequest(DataProcessor.java:28)   ← CALLED FROM\n';
+            result += '    at ServletHandler.doPost(ServletHandler.java:156)       ← CALLED FROM\n';
+            result += '    at HttpServlet.service(HttpServlet.java:847)            ← CALLED FROM\n';
+            result += '    at ApplicationMain.main(ApplicationMain.java:12)        ← STARTED HERE\n\n';
+            
+            result += '📖 READING THE STACK TRACE:\n';
+            result += '1. Bottom → Top: Execution flow\n';
+            result += '2. Line 42: Where the null pointer access happened\n';
+            result += '3. Line 28: Method that called processData()\n';
+            result += '4. Line 156: HTTP request handler\n';
+            result += '5. Line 12: Application entry point\n\n';
+            
+            result += '🔍 DEBUGGING TIPS:\n';
+            result += '• Focus on the topmost "at" line first\n';
+            result += '• Check what could be null at that line\n';
+            result += '• Trace back to see where null came from\n';
+            result += '• Add null checks before accessing objects';
+
+            output.textContent = result;
+            output.className = 'output error';
+        }
+
+        function generateChainedException() {
+            const output = document.getElementById('stackOutput');
+            
+            let result = '';
+            result += '🔗 Chained Exception Demonstration\n\n';
+            result += 'try {\n';
+            result += '    readConfigFile();\n';
+            result += '} catch (IOException e) {\n';
+            result += '    throw new ServiceException("Service initialization failed", e);\n';
+            result += '}\n\n';
+            result += '🚨 CHAINED EXCEPTION STACK TRACE:\n';
+            result += '═══════════════════════════════════════════\n';
+            result += 'Exception in thread "main" com.example.ServiceException: Service initialization failed\n';
+            result += '    at ConfigService.initialize(ConfigService.java:45)\n';
+            result += '    at Application.startup(Application.java:23)\n';
+            result += '    at Application.main(Application.java:12)\n';
+            result += 'Caused by: java.io.FileNotFoundException: config.properties (No such file or directory)\n';
+            result += '    at FileInputStream.<init>(FileInputStream.java:146)\n';
+            result += '    at ConfigService.readConfigFile(ConfigService.java:67)\n';
+            result += '    at ConfigService.initialize(ConfigService.java:43)\n';
+            result += '    ... 2 more\n\n';
+            
+            result += '🔍 UNDERSTANDING CHAINED EXCEPTIONS:\n';
+            result += '1. Main Exception: ServiceException (high-level)\n';
+            result += '2. Root Cause: FileNotFoundException (low-level)\n';
+            result += '3. "Caused by": Shows the original exception\n';
+            result += '4. "... X more": Shared stack frames\n\n';
+            
+            result += '💡 BENEFITS OF EXCEPTION CHAINING:\n';
+            result += '• Preserves complete error context\n';
+            result += '• High-level error with low-level details\n';
+            result += '• Better debugging information\n';
+            result += '• Maintains abstraction layers\n\n';
+            
+            result += '📝 BEST PRACTICE:\n';
+            result += 'throw new HighLevelException("Context message", lowLevelException);';
+
+            output.textContent = result;
+            output.className = 'output warning';
+        }
+
+        // Propagation demonstration
+        function demonstratePropagation() {
+            const chain = document.getElementById('propagationChain');
+            const output = document.getElementById('propagationOutput');
+            
+            chain.innerHTML = '';
+            propagationStep = 0;
+            
+            const methods = [
+                { name: 'main()', desc: 'Entry point - calls service()' },
+                { name: 'service()', desc: 'Business logic - calls repository()' },
+                { name: 'repository()', desc: 'Data access - calls database()' },
+                { name: 'database()', desc: '💥 SQLException thrown here!' }
+            ];
+            
+            let output_text = '🔄 Exception Propagation Simulation\n\n';
+            output_text += 'Tracing method calls...\n';
+            
+            methods.forEach((method, index) => {
+                setTimeout(() => {
+                    const methodDiv = document.createElement('div');
+                    methodDiv.className = index === methods.length - 1 ? 'method-call error' : 'method-call';
+                    methodDiv.innerHTML = `
+                        <strong>${method.name}</strong><br>
+                        <small>${method.desc}</small>
+                    `;
+                    chain.appendChild(methodDiv);
+                    
+                    if (index === methods.length - 1) {
+                        setTimeout(() => {
+                            output_text += '\n🚨 SQLException occurred in database()!\n';
+                            output_text += '📈 Exception propagates up the call stack:\n';
+                            output_text += 'database() → repository() → service() → main()\n\n';
+                            output_text += '🔍 Stack Trace:\n';
+                            output_text += 'java.sql.SQLException: Connection timeout\n';
+                            output_text += '    at Database.query(Database.java:156)\n';
+                            output_text += '    at Repository.findUser(Repository.java:45)\n';
+                            output_text += '    at Service.getUser(Service.java:28)\n';
+                            output_text += '    at Main.main(Main.java:12)\n\n';
+                            output_text += '💡 Exception will be handled by the first catch block\n';
+                            output_text += 'found while unwinding the stack!';
+                            
+                            output.textContent = output_text;
+                            output.className = 'output error';
+                        }, 500);
+                    }
+                }, index * 800);
+            });
+            
+            output.textContent = output_text;
+            output.className = 'output';
+        }
+
+        function demonstrateHandledPropagation() {
+            const chain = document.getElementById('propagationChain');
+            const output = document.getElementById('propagationOutput');
+            
+            chain.innerHTML = '';
+            
+            let result = '';
+            result += '✅ Handled Exception Propagation\n\n';
+            result += 'public void main() {\n';
+            result += '    try {\n';
+            result += '        service.processRequest();\n';
+            result += '    } catch (ServiceException e) {\n';
+            result += '        System.out.println("Service error handled: " + e.getMessage());\n';
+            result += '        // Exception caught and handled here - propagation stops!\n';
+            result += '    }\n';
+            result += '    System.out.println("Program continues normally");\n';
+            result += '}\n\n';
+            result += '🔄 EXECUTION FLOW:\n';
+            result += '1. main() calls service.processRequest()\n';
+            result += '2. service() calls repository.getData()\n';
+            result += '3. repository() calls database.connect()\n';
+            result += '4. database.connect() throws SQLException\n';
+            result += '5. SQLException propagates: database → repository → service → main\n';
+            result += '6. main() catch block handles the exception\n';
+            result += '7. ✅ Exception propagation STOPS\n';
+            result += '8. ✅ Program continues after try-catch block\n\n';
+            result += '💡 Key Point: Exception propagation stops at the first matching catch block!';
+
+            output.textContent = result;
+            output.className = 'output success';
+        }
+
+        function demonstrateUnhandledPropagation() {
+            const chain = document.getElementById('propagationChain');
+            const output = document.getElementById('propagationOutput');
+            
+            chain.innerHTML = '';
+            
+            let result = '';
+            result += '💥 Unhandled Exception Propagation\n\n';
+            result += 'public void main() {\n';
+            result += '    service.processRequest();  // No try-catch!\n';
+            result += '    System.out.println("This line will NEVER execute");\n';
+            result += '}\n\n';
+            result += '🔄 EXECUTION FLOW:\n';
+            result += '1. main() calls service.processRequest()\n';
+            result += '2. service() calls repository.getData()\n';
+            result += '3. repository() calls database.connect()\n';
+            result += '4. database.connect() throws SQLException\n';
+            result += '5. SQLException propagates: database → repository → service → main\n';
+            result += '6. main() has NO catch block!\n';
+            result += '7. 💀 JVM default exception handler takes over\n';
+            result += '8. 💀 Stack trace printed to System.err\n';
+            result += '9. 💀 Current thread terminates abnormally\n';
+            result += '10. 💀 Program CRASHES\n\n';
+            result += '🚨 CONSEQUENCES:\n';
+            result += '• Application terminates unexpectedly\n';
+            result += '• No cleanup code executes\n';
+            result += '• Resources may leak (files, connections, etc.)\n';
+            result += '• User sees technical error message\n';
+            result += '• Poor user experience\n';
+            result += '• Difficult to debug in production\n\n';
+            result += '💡 Always handle or declare exceptions to prevent crashes!';
+
+            output.textContent = result;
+            output.className = 'output error';
+        }
+
+        function clearPropagation() {
+            document.getElementById('propagationChain').innerHTML = '';
+            document.getElementById('propagationOutput').textContent = 'Click buttons to see how exceptions propagate through method call chains...';
+            document.getElementById('propagationOutput').className = 'output';
+        }
+
+        // Recovery strategies
+        function demonstrateRecovery() {
+            const input = document.getElementById('recoveryInput').value || 'test_service';
+            const strategy = document.getElementById('recoveryStrategy').value;
+            const output = document.getElementById('recoveryOutput');
+            
+            let result = '';
+            
+            switch (strategy) {
+                case 'retry':
+                    result += '🔄 Retry Mechanism Demonstration\n\n';
+                    result += 'int maxRetries = 3;\n';
+                    result += 'for (int attempt = 1; attempt <= maxRetries; attempt++) {\n';
+                    result += '    try {\n';
+                    result += `        result = unstableService.process("${input}");\n`;
+                    result += '        break; // Success - exit retry loop\n';
+                    result += '    } catch (TemporaryException e) {\n';
+                    result += '        System.out.println("Attempt " + attempt + " failed: " + e.getMessage());\n';
+                    result += '        if (attempt == maxRetries) {\n';
+                    result += '            throw new ServiceUnavailableException("All retries exhausted", e);\n';
+                    result += '        }\n';
+                    result += '        Thread.sleep(1000 * attempt); // Exponential backoff\n';
+                    result += '    }\n';
+                    result += '}\n\n';
+                    
+                    // Simulate retry attempts
+                    for (let i = 1; i <= 3; i++) {
+                        result += `🔄 Attempt ${i}: `;
+                        if (input.includes('unstable') && i < 3) {
+                            result += `Failed - ${i === 1 ? 'Connection timeout' : 'Service unavailable'}\n`;
+                        } else {
+                            result += `✅ Success!\n`;
+                            break;
+                        }
+                    }
+                    
+                    result += '\n💡 Retry Strategy Benefits:\n';
+                    result += '• Handles transient failures automatically\n';
+                    result += '• Exponential backoff prevents overwhelming service\n';
+                    result += '• Configurable retry count and delays\n';
+                    result += '• Improves system resilience';
+                    break;
+                    
+                case 'fallback':
+                    result += '🔧 Fallback Strategy Demonstration\n\n';
+                    result += 'try {\n';
+                    result += `    data = primaryService.getData("${input}");\n`;
+                    result += '    System.out.println("✅ Primary service successful");\n';
+                    result += '} catch (ServiceException e) {\n';
+                    result += '    System.out.println("⚠️ Primary service failed, trying backup...");\n';
+                    result += '    try {\n';
+                    result += `        data = backupService.getData("${input}");\n`;
+                    result += '        System.out.println("✅ Backup service successful");\n';
+                    result += '    } catch (ServiceException e2) {\n';
+                    result += '        System.out.println("⚠️ Backup also failed, using cache...");\n';
+                    result += `        data = cacheService.getCachedData("${input}");\n`;
+                    result += '        System.out.println("✅ Cache data retrieved");\n';
+                    result += '    }\n';
+                    result += '}\n\n';
+                    
+                    // Simulate fallback chain
+                    if (input.includes('primary_down')) {
+                        result += '❌ Primary service: Connection refused\n';
+                        if (input.includes('backup_down')) {
+                            result += '❌ Backup service: Service unavailable\n';
+                            result += '✅ Cache service: Cached data returned\n';
+                        } else {
+                            result += '✅ Backup service: Data retrieved successfully\n';
+                        }
+                    } else {
+                        result += '✅ Primary service: Data retrieved successfully\n';
+                    }
+                    
+                    result += '\n💡 Fallback Strategy Benefits:\n';
+                    result += '• Graceful degradation of service\n';
+                    result += '• Multiple layers of redundancy\n';
+                    result += '• Better user experience during outages\n';
+                    result += '• Maintains partial functionality';
+                    break;
+                    
+                case 'circuit':
+                    result += '🔌 Circuit Breaker Pattern Demonstration\n\n';
+                    result += 'public class CircuitBreaker {\n';
+                    result += '    private int failureCount = 0;\n';
+                    result += '    private final int failureThreshold = 5;\n';
+                    result += '    private CircuitState state = CLOSED;\n\n';
+                    result += '    public Result callService() throws CircuitOpenException {\n';
+                    result += '        if (state == OPEN) {\n';
+                    result += '            throw new CircuitOpenException("Circuit breaker is OPEN");\n';
+                    result += '        }\n';
+                    result += '        try {\n';
+                    result += `            Result result = externalService.call("${input}");\n`;
+                    result += '            onSuccess(); // Reset failure count\n';
+                    result += '            return result;\n';
+                    result += '        } catch (ServiceException e) {\n';
+                    result += '            onFailure(); // Increment failure count\n';
+                    result += '            throw e;\n';
+                    result += '        }\n';
+                    result += '    }\n';
+                    result += '}\n\n';
+                    
+                    // Simulate circuit breaker states
+                    const failures = input.includes('failing') ? 6 : 2;
+                    result += `🔍 Service failure count: ${failures}\n`;
+                    
+                    if (failures >= 5) {
+                        result += '🔴 Circuit State: OPEN (service calls blocked)\n';
+                        result += '⚠️ Fast failure: Circuit breaker prevents calls\n';
+                        result += '⏱️ Will retry after cooldown period\n';
+                    } else {
+                        result += '🟢 Circuit State: CLOSED (normal operation)\n';
+                        result += '✅ Service call allowed\n';
+                    }
+                    
+                    result += '\n💡 Circuit Breaker Benefits:\n';
+                    result += '• Prevents cascading failures\n';
+                    result += '• Fast failure when service is down\n';
+                    result += '• Automatic recovery detection\n';
+                    result += '• Protects both client and server';
+                    break;
+            }
+
+            output.textContent = result;
+            output.className = 'output success';
+        }
+
+        function demonstrateFinally() {
+            const output = document.getElementById('recoveryOutput');
+            
+            let result = '';
+            result += '🧹 Finally Block Demonstration\n\n';
+            result += '🧪 Test Case 1: Normal Execution\n';
+            result += 'FileWriter writer = null;\n';
+            result += 'try {\n';
+            result += '    writer = new FileWriter("data.txt");\n';
+            result += '    writer.write("Hello World");\n';
+            result += '    System.out.println("✅ File written successfully");\n';
+            result += '} catch (IOException e) {\n';
+            result += '    System.out.println("❌ Write failed: " + e.getMessage());\n';
+            result += '} finally {\n';
+            result += '    if (writer != null) {\n';
+            result += '        writer.close(); // 🧹 Always cleanup resources\n';
+            result += '    }\n';
+            result += '    System.out.println("🧹 Finally block executed");\n';
+            result += '}\n\n';
+            result += 'Output: ✅ File written successfully\n';
+            result += '        🧹 Finally block executed\n\n';
+            
+            result += '🧪 Test Case 2: Exception Occurred\n';
+            result += 'try {\n';
+            result += '    int result = 10 / 0;  // ArithmeticException\n';
+            result += '    System.out.println("This won\'t execute");\n';
+            result += '} catch (ArithmeticException e) {\n';
+            result += '    System.out.println("❌ Division by zero caught");\n';
+            result += '    return; // Even with return, finally still executes!\n';
+            result += '} finally {\n';
+            result += '    System.out.println("🧹 Finally executes even with return!");\n';
+            result += '}\n\n';
+            result += 'Output: ❌ Division by zero caught\n';
+            result += '        🧹 Finally executes even with return!\n\n';
+            
+            result += '🧪 Test Case 3: System.exit() - Finally DOESN\'T Execute\n';
+            result += 'try {\n';
+            result += '    System.out.println("About to exit JVM...");\n';
+            result += '    System.exit(0); // JVM terminates immediately\n';
+            result += '} finally {\n';
+            result += '    System.out.println("This will NOT execute!");\n';
+            result += '}\n\n';
+            result += 'Output: About to exit JVM...\n';
+            result += '        (Finally block skipped - JVM terminated)\n\n';
+            
+            result += '🎯 FINALLY BLOCK RULES:\n';
+            result += '✅ Always executes after try/catch\n';
+            result += '✅ Executes even if return statement in try/catch\n';
+            result += '✅ Executes even if another exception thrown\n';
+            result += '❌ Does NOT execute if System.exit() called\n';
+            result += '❌ Does NOT execute if JVM crashes\n';
+            result += '❌ Does NOT execute if thread interrupted forcibly\n\n';
+            
+            result += '💡 BEST PRACTICES:\n';
+            result += '• Use for resource cleanup (files, connections)\n';
+            result += '• Keep finally blocks simple and short\n';
+            result += '• Avoid throwing exceptions from finally\n';
+            result += '• Consider try-with-resources for auto-cleanup';
+
+            output.textContent = result;
+            output.className = 'output';
+        }
+
+        // Unhandled exceptions
+        function simulateUnhandled() {
+            const output = document.getElementById('unhandledOutput');
+            
+            let result = '';
+            result += '💥 Simulating Unhandled Exception Consequences\n\n';
+            result += '🚫 Code WITHOUT Exception Handling:\n';
+            result += 'public class UnsafeApp {\n';
+            result += '    public static void main(String[] args) {\n';
+            result += '        Scanner scanner = new Scanner(System.in);\n';
+            result += '        System.out.print("Enter a number: ");\n';
+            result += '        \n';
+            result += '        String input = scanner.nextLine();\n';
+            result += '        int number = Integer.parseInt(input);     // 💥 NumberFormatException\n';
+            result += '        \n';
+            result += '        int result = 100 / number;               // 💥 ArithmeticException\n';
+            result += '        System.out.println("Result: " + result);\n';
+            result += '        \n';
+            result += '        scanner.close();  // 💀 This line NEVER executes\n';
+            result += '        System.out.println("App finished");      // 💀 This line NEVER executes\n';
+            result += '    }\n';
+            result += '}\n\n';
+            
+            result += '🎬 EXECUTION SIMULATION (Input: "abc"):\n';
+            result += '═══════════════════════════════════════════════\n';
+            result += 'Enter a number: abc\n';
+            result += 'Exception in thread "main" java.lang.NumberFormatException: For input string: "abc"\n';
+            result += '    at java.lang.Integer.parseInt(Integer.java:555)\n';
+            result += '    at java.lang.Integer.parseInt(Integer.java:615)\n';
+            result += '    at UnsafeApp.main(UnsafeApp.java:8)\n\n';
+            
+            result += '💀 PROGRAM DEATH ANALYSIS:\n';
+            result += '1. ❌ Program terminates at line 8\n';
+            result += '2. ❌ scanner.close() never called → Resource leak\n';
+            result += '3. ❌ "App finished" never printed\n';
+            result += '4. ❌ User sees cryptic technical error\n';
+            result += '5. ❌ No graceful error recovery\n';
+            result += '6. ❌ Stack trace printed to console\n';
+            result += '7. ❌ Application reputation damaged\n\n';
+            
+            result += '🏥 FIXED VERSION WITH EXCEPTION HANDLING:\n';
+            result += 'try {\n';
+            result += '    int number = Integer.parseInt(input);\n';
+            result += '    int result = 100 / number;\n';
+            result += '    System.out.println("Result: " + result);\n';
+            result += '} catch (NumberFormatException e) {\n';
+            result += '    System.out.println("⚠️ Please enter a valid number");\n';
+            result += '} catch (ArithmeticException e) {\n';
+            result += '    System.out.println("⚠️ Cannot divide by zero");\n';
+            result += '} finally {\n';
+            result += '    scanner.close(); // ✅ Always cleanup resources\n';
+            result += '}\n';
+            result += 'System.out.println("✅ App finished gracefully");\n\n';
+            
+            result += '✅ FIXED EXECUTION (Input: "abc"):\n';
+            result += 'Enter a number: abc\n';
+            result += '⚠️ Please enter a valid number\n';
+            result += '✅ App finished gracefully';
+
+            output.textContent = result;
+            output.className = 'output error';
+        }
+
+        function showUnhandledConsequences() {
+            const output = document.getElementById('unhandledOutput');
+            
+            let result = '';
+            result += '⚠️ Consequences of NOT Handling Exceptions\n\n';
+            result += '🔍 WHAT HAPPENS INTERNALLY:\n';
+            result += '═══════════════════════════════════════\n';
+            result += '1. Exception object is created\n';
+            result += '2. JVM searches current method for catch block\n';
+            result += '3. If not found, method terminates and exception propagates\n';
+            result += '4. JVM searches calling method for catch block\n';
+            result += '5. Process continues up the call stack\n';
+            result += '6. If no handler found, default exception handler activates\n';
+            result += '7. Stack trace is printed to System.err\n';
+            result += '8. Current thread terminates abnormally\n';
+            result += '9. Application may crash or become unstable\n\n';
+            
+            result += '💔 BUSINESS IMPACT:\n';
+            result += '═══════════════════\n';
+            result += '• 💰 Lost revenue due to crashes\n';
+            result += '• 😤 Frustrated users abandon application\n';
+            result += '• 📉 Poor app store ratings and reviews\n';
+            result += '• 🔧 Increased support and maintenance costs\n';
+            result += '• ⚖️ Potential data loss or corruption\n';
+            result += '• 🔒 Security vulnerabilities exposed\n';
+            result += '• 📊 Difficult to track and fix issues\n\n';
+            
+            result += '👤 USER EXPERIENCE IMPACT:\n';
+            result += '═════════════════════════\n';
+            result += '• ❌ Cryptic technical error messages\n';
+            result += '• ❌ Unexpected application shutdowns\n';
+            result += '• ❌ Loss of unsaved work\n';
+            result += '• ❌ Inability to complete tasks\n';
+            result += '• ❌ Frustration and loss of trust\n';
+            result += '• ❌ Need to restart application frequently\n\n';
+            
+            result += '🛠️ DEVELOPER IMPACT:\n';
+            result += '════════════════════\n';
+            result += '• 🐛 Difficult to reproduce bugs\n';
+            result += '• 🔍 Hard to identify root causes\n';
+            result += '• ⏰ More time spent debugging\n';
+            result += '• 📞 Increased customer support tickets\n';
+            result += '• 🚨 Emergency fixes and patches\n';
+            result += '• 😰 Stress and pressure from management\n\n';
+            
+            result += '💡 THE SOLUTION: Proper Exception Handling\n';
+            result += '═══════════════════════════════════════════\n';
+            result += '✅ Graceful error recovery\n';
+            result += '✅ User-friendly error messages\n';
+            result += '✅ Comprehensive logging for debugging\n';
+            result += '✅ Resource cleanup and memory management\n';
+            result += '✅ Application stability and reliability\n';
+            result += '✅ Better user experience and satisfaction\n';
+            result += '✅ Easier maintenance and troubleshooting';
+
+            output.textContent = result;
+            output.className = 'output warning';
+        }
+
+        function showBestPractices() {
+            const output = document.getElementById('unhandledOutput');
+            
+            let result = '';
+            result += '✅ Exception Handling Best Practices\n\n';
+            result += '🎯 1. BE SPECIFIC WITH EXCEPTION TYPES\n';
+            result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+            result += '❌ BAD:\n';
+            result += 'try {\n';
+            result += '    // risky code\n';
+            result += '} catch (Exception e) {  // Too generic!\n';
+            result += '    System.out.println("Error occurred");\n';
+            result += '}\n\n';
+            result += '✅ GOOD:\n';
+            result += 'try {\n';
+            result += '    // risky code\n';
+            result += '} catch (FileNotFoundException e) {\n';
+            result += '    System.out.println("File not found: " + e.getMessage());\n';
+            result += '} catch (IOException e) {\n';
+            result += '    System.out.println("I/O error: " + e.getMessage());\n';
+            result += '}\n\n';
+            
+            result += '🎯 2. PROVIDE MEANINGFUL ERROR MESSAGES\n';
+            result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+            result += '❌ BAD:\n';
+            result += 'catch (SQLException e) {\n';
+            result += '    System.out.println("Error");  // Useless message\n';
+            result += '}\n\n';
+            result += '✅ GOOD:\n';
+            result += 'catch (SQLException e) {\n';
+            result += '    String msg = "Database connection failed while saving user data. " +\n';
+            result += '                 "Please check your network connection and try again.";\n';
+            result += '    logger.error(msg, e);\n';
+            result += '    showUserFriendlyMessage(msg);\n';
+            result += '}\n\n';
+            
+            result += '🎯 3. ALWAYS CLEAN UP RESOURCES\n';
+            result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+            result += '✅ Using try-with-resources (Recommended):\n';
+            result += 'try (FileReader reader = new FileReader("file.txt");\n';
+            result += '     BufferedReader buffered = new BufferedReader(reader)) {\n';
+            result += '    // Use resources\n';
+            result += '}  // Automatically closed, even if exception occurs\n\n';
+            result += '✅ Using finally block:\n';
+            result += 'FileReader reader = null;\n';
+            result += 'try {\n';
+            result += '    reader = new FileReader("file.txt");\n';
+            result += '    // Use reader\n';
+            result += '} finally {\n';
+            result += '    if (reader != null) reader.close();\n';
+            result += '}\n\n';
+            
+            result += '🎯 4. LOG EXCEPTIONS PROPERLY\n';
+            result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+            result += '✅ Comprehensive logging:\n';
+            result += 'catch (ProcessingException e) {\n';
+            result += '    logger.error("Failed to process order {} for customer {}", \n';
+            result += '                 orderId, customerId, e);\n';
+            result += '    // Include context: what, when, where, why\n';
+            result += '    metrics.incrementErrorCounter("order_processing_failed");\n';
+            result += '}\n\n';
+            
+            result += '🎯 5. DON\'T IGNORE EXCEPTIONS\n';
+            result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+            result += '❌ NEVER do this:\n';
+            result += 'try {\n';
+            result += '    riskyOperation();\n';
+            result += '} catch (Exception e) {\n';
+            result += '    // Silent failure - debugging nightmare!\n';
+            result += '}\n\n';
+            result += '✅ Always handle or log:\n';
+            result += 'try {\n';
+            result += '    riskyOperation();\n';
+            result += '} catch (Exception e) {\n';
+            result += '    logger.warn("Risky operation failed, using fallback", e);\n';
+            result += '    fallbackOperation();\n';
+            result += '}\n\n';
+            
+            result += '🎯 6. USE EXCEPTION CHAINING\n';
+            result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+            result += '✅ Preserve original exception context:\n';
+            result += 'try {\n';
+            result += '    lowLevelOperation();\n';
+            result += '} catch (LowLevelException e) {\n';
+            result += '    throw new HighLevelException("Business operation failed", e);\n';
+            result += '}\n\n';
+            
+            result += '🏆 EXCEPTION HANDLING CHECKLIST:\n';
+            result += '═══════════════════════════════════\n';
+            result += '☑️ Handle specific exception types\n';
+            result += '☑️ Provide user-friendly error messages\n';
+            result += '☑️ Log exceptions with context\n';
+            result += '☑️ Clean up resources in finally/try-with-resources\n';
+            result += '☑️ Use exception chaining for context\n';
+            result += '☑️ Implement retry/fallback strategies\n';
+            result += '☑️ Test exception scenarios\n';
+            result += '☑️ Monitor and alert on exceptions\n';
+            result += '☑️ Document expected exceptions\n';
+            result += '☑️ Follow the fail-fast principle';
+
+            output.textContent = result;
+            output.className = 'output success';
+        }
+
+        // Utility function to clear output
+        function clearOutput(outputId) {
+            const output = document.getElementById(outputId);
+            output.textContent = 'Output cleared. Ready for next demonstration...';
+            output.className = 'output';
+        }
+    </script>
+</body>
+</html>
