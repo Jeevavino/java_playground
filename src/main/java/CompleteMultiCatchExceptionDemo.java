@@ -1,5 +1,4 @@
 import java.io.*;
-import java.util.Scanner;
 import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.util.concurrent.TimeoutException;
@@ -136,65 +135,75 @@ class MultiCatchDemo {
 
 // JDK 21 Enhanced Multi-catch Features
 class JDK21MultiCatchFeatures {
-    
+
     public void demonstrateJDK21Enhancements() {
         System.out.println("=== JDK 21 ENHANCED MULTI-CATCH FEATURES ===");
-        
+
         // Pattern matching with instanceof (JDK 21 enhancement)
         demonstratePatternMatchingWithExceptions();
-        
+
         // Switch expressions with exception handling (JDK 21)
         demonstrateSwitchWithExceptions();
-        
+
         // Virtual threads with multi-catch (JDK 21 Project Loom)
         demonstrateVirtualThreadsWithMultiCatch();
     }
-    
+
     private void demonstratePatternMatchingWithExceptions() {
         System.out.println("\n🔍 Pattern Matching with Exception Handling:");
-        
-        try {
-            processDataWithPatternMatching("invalid_data");
-            
-        } catch (IOException | IllegalArgumentException | NumberFormatException e) {
-            // Enhanced pattern matching in catch (JDK 21 style)
-            switch (e) {
-                case IOException io -> {
-                    System.out.println("📁 I/O Error: " + io.getMessage());
-                    // Handle I/O specific recovery
+
+        // Test different scenarios to demonstrate all exception types
+        String[] testCases = {"invalid_data", "io_error", "number_error"};
+
+        for (String testCase : testCases) {
+            try {
+                processDataWithPatternMatching(testCase);
+                System.out.println("✅ " + testCase + " processed successfully");
+
+            } catch (IOException | IllegalArgumentException  e) {
+                // Enhanced pattern matching in catch (JDK 21 style)
+                switch (e) {
+                    case IOException io -> {
+                        System.out.println("📁 I/O Error: " + io.getMessage());
+                        // Handle I/O specific recovery
+                    }
+                    case NumberFormatException nfe -> {
+                        System.out.println("🔢 Number Format Error: " + nfe.getMessage());
+                        // Handle number parsing issues
+                    }
+                    case IllegalArgumentException iae -> {
+                        System.out.println("🚫 Invalid Argument: " + iae.getMessage());
+                        // Handle argument validation
+                    }
+                    default -> System.out.println("❓ Unexpected exception type");
                 }
-                case IllegalArgumentException iae -> {
-                    System.out.println("🚫 Invalid Argument: " + iae.getMessage());
-                    // Handle argument validation
-                }
-                case NumberFormatException nfe -> {
-                    System.out.println("🔢 Number Format Error: " + nfe.getMessage());
-                    // Handle number parsing issues
-                }
-                default -> System.out.println("❓ Unexpected exception type");
             }
         }
     }
-    
-    private void processDataWithPatternMatching(String data) throws IOException, IllegalArgumentException {
+
+    private void processDataWithPatternMatching(String data) throws IOException, IllegalArgumentException, NumberFormatException {
         if (data.contains("invalid")) {
             throw new IllegalArgumentException("Data validation failed for: " + data);
         }
         if (data.contains("io_error")) {
             throw new IOException("I/O operation failed");
         }
+        if (data.contains("number_error")) {
+            // Directly throw NumberFormatException (not through Integer.parseInt to avoid the hierarchy issue)
+            throw new NumberFormatException("Number parsing failed for: " + data);
+        }
     }
-    
+
     private void demonstrateSwitchWithExceptions() {
         System.out.println("\n🔀 Switch Expression with Exception Handling:");
-        
+
         String[] operations = {"divide", "parse", "access", "unknown"};
-        
+
         for (String operation : operations) {
             try {
                 String result = performOperation(operation);
                 System.out.println("✅ " + operation + " -> " + result);
-                
+
             } catch (ArithmeticException | NumberFormatException | ArrayIndexOutOfBoundsException e) {
                 // Multi-catch with switch expression for error reporting
                 String errorType = switch (e) {
@@ -203,12 +212,12 @@ class JDK21MultiCatchFeatures {
                     case ArrayIndexOutOfBoundsException aie -> "Index Error";
                     default -> "Unknown Error";
                 };
-                
+
                 System.out.println("❌ " + operation + " failed: " + errorType + " - " + e.getMessage());
             }
         }
     }
-    
+
     private String performOperation(String operation) {
         return switch (operation) {
             case "divide" -> {
@@ -227,44 +236,45 @@ class JDK21MultiCatchFeatures {
             default -> "Operation completed successfully";
         };
     }
-    
+
     private void demonstrateVirtualThreadsWithMultiCatch() {
         System.out.println("\n🧵 Virtual Threads with Multi-catch (JDK 21):");
-        
+
         try (var executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
-            
+
             // Submit tasks that might throw exceptions
             var future1 = executor.submit(() -> {
                 throw new RuntimeException("Task 1 failed");
             });
-            
+
             var future2 = executor.submit(() -> {
                 throw new IllegalStateException("Task 2 failed");
             });
-            
+
             try {
                 future1.get();
                 future2.get();
-                
+
             } catch (java.util.concurrent.ExecutionException e) {
                 // Multi-catch for different wrapped exceptions
                 Throwable cause = e.getCause();
-                
+
                 switch (cause) {
-                    case RuntimeException re -> 
-                        System.out.println("🔧 Runtime exception in virtual thread: " + re.getMessage());
-                    case IllegalStateException ise -> 
-                        System.out.println("⚠️ State exception in virtual thread: " + ise.getMessage());
-                    default -> 
-                        System.out.println("❓ Other exception in virtual thread: " + cause.getMessage());
+                    case IllegalStateException ise ->
+                            System.out.println("⚠️ State exception in virtual thread: " + ise.getMessage());
+                    case RuntimeException re ->
+                            System.out.println("🔧 Runtime exception in virtual thread: " + re.getMessage());
+                    default ->
+                            System.out.println("❓ Other exception in virtual thread: " + cause.getMessage());
                 }
             }
-            
-        } catch (InterruptedException | IOException e) {
+
+        } catch (InterruptedException e) {
             System.out.println("🚨 Thread execution error: " + e.getClass().getSimpleName());
         }
     }
 }
+
 
 // Multi-catch Best Practices and Edge Cases
 class MultiCatchBestPractices {

@@ -309,27 +309,7 @@ class QueueDemo {
         }
         System.out.println("\n");
     }
-    
-    public void demonstrateArrayDeque() {
-        System.out.println("=== ARRAYDEQUE DEMO ===");
-        ArrayDeque<String> deque = new ArrayDeque<>();
-        
-        // Adding to both ends
-        deque.addFirst("Second");
-        deque.addFirst("First");
-        deque.addLast("Third");
-        deque.addLast("Fourth");
-        
-        System.out.println("ArrayDeque: " + deque);
-        System.out.println("First element: " + deque.peekFirst());
-        System.out.println("Last element: " + deque.peekLast());
-        
-        // Removing from both ends
-        System.out.println("Removed from first: " + deque.removeFirst());
-        System.out.println("Removed from last: " + deque.removeLast());
-        System.out.println("After removal: " + deque);
-        System.out.println();
-    }
+
 }
 
 // Collections Utility Class Demonstration
@@ -507,8 +487,7 @@ class CollectionsFrameworkApp {
         // Queue Interface Demos
         QueueDemo queueDemo = new QueueDemo();
         queueDemo.demonstratePriorityQueue();
-        queueDemo.demonstrateArrayDeque();
-        
+
         // Collections Utility
         CollectionsUtilityDemo utilityDemo = new CollectionsUtilityDemo();
         utilityDemo.demonstrateCollectionsClass();
