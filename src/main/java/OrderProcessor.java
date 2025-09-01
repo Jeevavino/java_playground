@@ -1,7 +1,9 @@
 public class OrderProcessor {
 
-    // This LOOKS like it needs nested ifs (but it doesn't!)
-    public static String processOrderNested(String item, int quantity, double price, String customerType) {
+    // BAD EXAMPLE: Complex nested logic with single return point
+    public String processOrderNested(String item, int quantity, double price, String customerType) {
+        String result = "";
+
         if (item != null && !item.isEmpty()) {
             if (quantity > 0) {
                 if (price > 0) {
@@ -13,32 +15,34 @@ public class OrderProcessor {
                                     if (customerType.equals("VIP")) {
                                         total = total * 0.8; // 20% discount
                                     }
-                                    return "Order processed! Total: $" + String.format("%.2f", total);
+                                    result = "Order processed! Total: $" + String.format("%.2f", total);
                                 } else {
-                                    return "Price too high - maximum $1000 per item";
+                                    result = "Price too high - maximum $1000 per item";
                                 }
                             } else {
-                                return "Quantity too high - maximum 100 items";
+                                result = "Quantity too high - maximum 100 items";
                             }
                         } else {
-                            return "Invalid customer type - use VIP, Regular, or Guest";
+                            result = "Invalid customer type - use VIP, Regular, or Guest";
                         }
                     } else {
-                        return "Customer type is required";
+                        result = "Customer type is required";
                     }
                 } else {
-                    return "Price must be positive";
+                    result = "Price must be positive";
                 }
             } else {
-                return "Quantity must be positive";
+                result = "Quantity must be positive";
             }
         } else {
-            return "Item name is required";
+            result = "Item name is required";
         }
+
+        return result;
     }
 
-    // Same logic with immediate return - crystal clear!
-    public static String processOrder(String item, int quantity, double price, String customerType) {
+    // GOOD EXAMPLE: Clean guard clauses with early returns
+    public String processOrder(String item, int quantity, double price, String customerType) {
         if (item == null || item.isEmpty()) {
             return "Item name is required";
         }
@@ -77,6 +81,8 @@ public class OrderProcessor {
     }
 
     public static void main(String[] args) {
+        OrderProcessor processor = new OrderProcessor();
+
         // Test cases: item, quantity, price, customerType
         Object[][] orders = {
                 {null, 5, 10.0, "Regular"},
@@ -93,7 +99,7 @@ public class OrderProcessor {
         System.out.println("=== Testing Orders ===");
         for (int i = 0; i < orders.length; i++) {
             Object[] order = orders[i];
-            String result = processOrder(
+            String result = processor.processOrder(
                     (String) order[0],
                     (Integer) order[1],
                     (Double) order[2],
