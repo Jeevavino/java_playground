@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thread States and Execution Stack Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        h1, h2 {
+            color: #4a5568;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .demo-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .thread-lifecycle {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .thread-stack-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .thread-state-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .state-box {
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 150px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            border: 3px solid transparent;
+        }
+
+        .state-new {
+            background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+            color: #1976d2;
+            border-color: #2196f3;
+        }
+
+        .state-ready {
+            background: linear-gradient(45deg, #fff3e0, #ffcc80);
+            color: #ef6c00;
+            border-color: #ff9800;
+        }
+
+        .state-running {
+            background: linear-gradient(45deg, #e8f5e8, #a5d6a7);
+            color: #2e7d32;
+            border-color: #4caf50;
+            animation: runningPulse 2s infinite;
+        }
+
+        .state-blocked {
+            background: linear-gradient(45deg, #ffebee, #ffcdd2);
+            color: #c62828;
+            border-color: #f44336;
+            animation: blockedBlink 3s infinite;
+        }
+
+        .state-terminated {
+            background: linear-gradient(45deg, #f3e5f5, #ce93d8);
+            color: #7b1fa2;
+            border-color: #9c27b0;
+        }
+
+        .state-active {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        @keyframes runningPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+        @keyframes blockedBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .state-arrow {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 20px solid #666;
+            margin: -5px 0;
+        }
+
+        .thread-stack-container {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .thread-stack {
+            border: 3px solid #333;
+            border-radius: 10px;
+            width: 200px;
+            min-height: 300px;
+            background: linear-gradient(180deg, #fff 0%, #f8f9fa 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        .stack-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 7px 7px 0 0;
+        }
+
+        .stack-frame {
+            width: 90%;
+            padding: 8px;
+            margin: 3px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .frame-method {
+            background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+            color: #1976d2;
+        }
+
+        .frame-local-vars {
+            background: linear-gradient(45deg, #f3e5f5, #e1bee7);
+            color: #7b1fa2;
+        }
+
+        .frame-params {
+            background: linear-gradient(45deg, #e8f5e8, #c8e6c9);
+            color: #2e7d32;
+        }
+
+        .frame-return {
+            background: linear-gradient(45deg, #fff3e0, #ffe0b2);
+            color: #ef6c00;
+        }
+
+        .stack-pointer {
+            position: absolute;
+            right: -30px;
+            top: 50px;
+            width: 20px;
+            height: 20px;
+            background: red;
+            border-radius: 50%;
+            animation: pointer-pulse 1.5s infinite;
+        }
+
+        .stack-pointer:after {
+            content: "→";
+            position: absolute;
+            right: 25px;
+            top: -2px;
+            color: red;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        @keyframes pointer-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .control-panel {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            margin: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-state {
+            background: linear-gradient(45deg, #4caf50, #45a049);
+            color: white;
+        }
+
+        .btn-stack {
+            background: linear-gradient(45deg, #2196f3, #0d87d1);
+            color: white;
+        }
+
+        .btn-memory {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .explanation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .explanation-box {
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid;
+        }
+
+        .thread-states-box {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            border-left-color: #4caf50;
+        }
+
+        .stack-explanation-box {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-left-color: #2196f3;
+        }
+
+        .memory-explanation-box {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-left-color: #ff9800;
+        }
+
+        .memory-layout {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .memory-section {
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .heap-section {
+            background: linear-gradient(45deg, #ffebee, #ffcdd2);
+            border-color: #f44336;
+        }
+
+        .stack-section {
+            background: linear-gradient(45deg, #e8f5e8, #c8e6c9);
+            border-color: #4caf50;
+        }
+
+        .code-section {
+            background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+            border-color: #2196f3;
+        }
+
+        .timeline {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .timeline-step {
+            min-width: 100px;
+            height: 60px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 0.9em;
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+
+        .step-active {
+            background: linear-gradient(45deg, #4caf50, #45a049);
+            color: white;
+            border-color: #4caf50;
+            transform: scale(1.1);
+        }
+
+        .java-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .code-highlight {
+            background: #ffd700;
+            color: #333;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧵 Thread States & Execution Stack</h1>
+    <p style="text-align: center; font-size: 1.2em; color: #666;">Understanding Thread Lifecycle and Memory Stack Structure</p>
+</div>
+
+<div class="container">
+    <div class="demo-container">
+        <div class="thread-lifecycle">
+            <h3>🔄 Thread State Lifecycle</h3>
+            <div class="thread-state-diagram">
+                <div class="state-box state-new" id="state-new" onclick="showState('new')">
+                    NEW<br><small>Thread created</small>
+                </div>
+                <div class="state-arrow"></div>
+                <div class="state-box state-ready" id="state-ready" onclick="showState('ready')">
+                    READY<br><small>Waiting for CPU</small>
+                </div>
+                <div class="state-arrow"></div>
+                <div class="state-box state-running" id="state-running" onclick="showState('running')">
+                    RUNNING<br><small>Executing on CPU</small>
+                </div>
+                <div class="state-arrow"></div>
+                <div class="state-box state-blocked" id="state-blocked" onclick="showState('blocked')">
+                    BLOCKED<br><small>Waiting for I/O</small>
+                </div>
+                <div class="state-arrow"></div>
+                <div class="state-box state-terminated" id="state-terminated" onclick="showState('terminated')">
+                    TERMINATED<br><small>Thread finished</small>
+                </div>
+            </div>
+
+            <div id="state-description">
+                <h4>Click on a state to learn more!</h4>
+                <p>Each thread goes through these states during its lifetime.</p>
+            </div>
+        </div>
+
+        <div class="thread-stack-section">
+            <h3>📚 Thread Execution Stack</h3>
+            <div class="thread-stack-container">
+                <div class="thread-stack" id="thread1-stack">
+                    <div class="stack-header">Thread 1 Stack</div>
+                    <div class="stack-pointer"></div>
+                    <div class="stack-frame frame-method">main()</div>
+                    <div class="stack-frame frame-local-vars">int x = 10</div>
+                    <div class="stack-frame frame-params">String[] args</div>
+                    <div class="stack-frame frame-return">Return Address</div>
+                </div>
+
+                <div class="thread-stack" id="thread2-stack">
+                    <div class="stack-header">Thread 2 Stack</div>
+                    <div class="stack-frame frame-method">calculateSum()</div>
+                    <div class="stack-frame frame-local-vars">int sum = 0</div>
+                    <div class="stack-frame frame-params">int a, int b</div>
+                    <div class="stack-frame frame-return">Return to caller</div>
+                    <div class="stack-frame frame-method">run()</div>
+                    <div class="stack-frame frame-local-vars">Thread variables</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <button class="btn btn-state" onclick="simulateStateTransitions()">Simulate State Transitions</button>
+        <button class="btn btn-stack" onclick="simulateMethodCalls()">Simulate Method Calls</button>
+        <button class="btn btn-memory" onclick="showMemoryLayout()">Show Memory Layout</button>
+        <button class="btn" style="background: #gray;" onclick="resetDemo()">Reset</button>
+    </div>
+
+    <div class="timeline" id="execution-timeline">
+        <!-- Timeline will be populated by JavaScript -->
+    </div>
+</div>
+
+<div class="container">
+    <h2>💡 Understanding Thread Architecture</h2>
+    <div class="explanation-grid">
+        <div class="explanation-box thread-states-box">
+            <h3>🔄 Thread States Explained</h3>
+            <ul>
+                <li><strong>NEW:</strong> Thread object created but not started</li>
+                <li><strong>READY:</strong> Thread is ready to run, waiting for CPU time</li>
+                <li><strong>RUNNING:</strong> Thread is currently executing on a CPU core</li>
+                <li><strong>BLOCKED:</strong> Thread is waiting for I/O, lock, or resource</li>
+                <li><strong>TERMINATED:</strong> Thread execution completed or stopped</li>
+            </ul>
+            <p><em>Only threads in RUNNING state consume CPU cycles</em></p>
+        </div>
+
+        <div class="explanation-box stack-explanation-box">
+            <h3>📚 Thread Stack Structure</h3>
+            <ul>
+                <li><strong>Stack Frame:</strong> Each method call creates a frame</li>
+                <li><strong>Local Variables:</strong> Method's local variables stored in frame</li>
+                <li><strong>Parameters:</strong> Method parameters passed in frame</li>
+                <li><strong>Return Address:</strong> Where to return after method ends</li>
+                <li><strong>Stack Pointer:</strong> Points to current execution location</li>
+            </ul>
+            <p><em>Each thread has its own independent stack (typically 1MB)</em></p>
+        </div>
+
+        <div class="explanation-box memory-explanation-box">
+            <h3>💾 Memory Layout</h3>
+            <div class="memory-layout">
+                <div class="memory-section stack-section">
+                    <h4>Stack</h4>
+                    <p>Thread-specific</p>
+                    <p>Method calls</p>
+                    <p>Local variables</p>
+                </div>
+                <div class="memory-section heap-section">
+                    <h4>Heap</h4>
+                    <p>Shared by all threads</p>
+                    <p>Objects</p>
+                    <p>Instance variables</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <h3>💻 Java Thread Example</h3>
+    <div class="java-code">
+        public class ThreadDemo {
+        public static void main(String[] args) {
+        // <span class="code-highlight">Thread in NEW state</span>
+        Thread thread1 = new Thread(() -> {
+        // <span class="code-highlight">Local variables go on thread's stack</span>
+        int localVar = 42;
+        String threadName = Thread.currentThread().getName();
+
+        // <span class="code-highlight">Method call creates new stack frame</span>
+        performCalculation(localVar);
+        });
+
+        // <span class="code-highlight">Thread moves to READY state</span>
+        thread1.start();
+
+        try {
+        // <span class="code-highlight">Main thread BLOCKED waiting for thread1</span>
+        thread1.join();
+        } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        }
+
+        // <span class="code-highlight">thread1 is now TERMINATED</span>
+        System.out.println("Thread finished");
+        }
+
+        private static void performCalculation(int value) {
+        // <span class="code-highlight">New stack frame created</span>
+        int result = value * 2;
+
+        // <span class="code-highlight">Simulate I/O - thread becomes BLOCKED</span>
+        try {
+        Thread.sleep(1000);
+        } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        }
+
+        // <span class="code-highlight">Stack frame removed when method returns</span>
+        System.out.println("Result: " + result);
+        }
+        }
+    </div>
+</div>
+
+<script>
+    let currentState = null;
+    let simulationInterval = null;
+
+    const stateDescriptions = {
+        'new': {
+            title: 'NEW State',
+            description: 'Thread object has been created but start() method has not been called yet. Thread is not yet scheduled for execution.',
+            details: ['Thread object exists in memory', 'No system resources allocated yet', 'Call start() to move to READY state']
+        },
+        'ready': {
+            title: 'READY State',
+            description: 'Thread is ready to run and waiting for CPU time. The thread scheduler will decide when to run it.',
+            details: ['Thread is in the run queue', 'Waiting for CPU core availability', 'Can move to RUNNING state anytime']
+        },
+        'running': {
+            title: 'RUNNING State',
+            description: 'Thread is currently executing on a CPU core. Only one thread per core can be in this state.',
+            details: ['Thread is executing instructions', 'Consuming CPU cycles', 'Can be preempted by scheduler']
+        },
+        'blocked': {
+            title: 'BLOCKED State',
+            description: 'Thread is waiting for a resource, I/O operation, or another thread to complete.',
+            details: ['Waiting for file read/write', 'Waiting for network response', 'Waiting for lock acquisition']
+        },
+        'terminated': {
+            title: 'TERMINATED State',
+            description: 'Thread execution has completed. The thread cannot be restarted.',
+            details: ['run() method completed', 'Exception caused termination', 'Thread resources cleaned up']
+        }
+    };
+
+    function showState(state) {
+        // Remove previous active state
+        document.querySelectorAll('.state-box').forEach(box => {
+            box.classList.remove('state-active');
+        });
+
+        // Highlight current state
+        document.getElementById(`state-${state}`).classList.add('state-active');
+
+        // Show description
+        const info = stateDescriptions[state];
+        const descriptionDiv = document.getElementById('state-description');
+        descriptionDiv.innerHTML = `
+                <h4>${info.title}</h4>
+                <p>${info.description}</p>
+                <ul>
+                    ${info.details.map(detail => `<li>${detail}</li>`).join('')}
+                </ul>
+            `;
+
+        currentState = state;
+    }
+
+    function simulateStateTransitions() {
+        resetDemo();
+        const states = ['new', 'ready', 'running', 'blocked', 'ready', 'running', 'terminated'];
+        let index = 0;
+
+        const timeline = document.getElementById('execution-timeline');
+        timeline.innerHTML = '<h4>Thread Lifecycle Timeline:</h4>';
+
+        simulationInterval = setInterval(() => {
+            if (index < states.length) {
+                showState(states[index]);
+
+                // Add to timeline
+                const step = document.createElement('div');
+                step.className = 'timeline-step step-active';
+                step.textContent = states[index].toUpperCase();
+                timeline.appendChild(step);
+
+                // Remove active class from previous steps
+                setTimeout(() => {
+                    step.classList.remove('step-active');
+                }, 1000);
+
+                index++;
+            } else {
+                clearInterval(simulationInterval);
+            }
+        }, 1500);
+    }
+
+    function simulateMethodCalls() {
+        resetDemo();
+        const thread1Stack = document.getElementById('thread1-stack');
+        const thread2Stack = document.getElementById('thread2-stack');
+
+        // Animate stack growth
+        let step = 0;
+        simulationInterval = setInterval(() => {
+            switch(step) {
+                case 0:
+                    addStackFrame(thread1Stack, 'doWork()', 'frame-method');
+                    break;
+                case 1:
+                    addStackFrame(thread1Stack, 'int i = 0', 'frame-local-vars');
+                    break;
+                case 2:
+                    addStackFrame(thread1Stack, 'processData()', 'frame-method');
+                    break;
+                case 3:
+                    addStackFrame(thread2Stack, 'synchronized block', 'frame-method');
+                    break;
+                case 4:
+                    addStackFrame(thread2Stack, 'Object lock', 'frame-local-vars');
+                    break;
+                case 5:
+                    // Remove frames (method returns)
+                    removeStackFrame(thread1Stack);
+                    removeStackFrame(thread2Stack);
+                    break;
+                case 6:
+                    removeStackFrame(thread1Stack);
+                    removeStackFrame(thread2Stack);
+                    break;
+                default:
+                    clearInterval(simulationInterval);
+            }
+            step++;
+        }, 1000);
+    }
+
+    function addStackFrame(stack, content, type) {
+        const frame = document.createElement('div');
+        frame.className = `stack-frame ${type}`;
+        frame.textContent = content;
+        frame.style.transform = 'translateY(-20px)';
+        frame.style.opacity = '0';
+
+        // Insert after header but before other frames
+        const header = stack.querySelector('.stack-header');
+        stack.insertBefore(frame, header.nextSibling);
+
+        // Animate in
+        setTimeout(() => {
+            frame.style.transform = 'translateY(0)';
+            frame.style.opacity = '1';
+        }, 100);
+    }
+
+    function removeStackFrame(stack) {
+        const frames = stack.querySelectorAll('.stack-frame');
+        if (frames.length > 4) { // Keep original 4 frames
+            const frameToRemove = frames[1]; // Remove first added frame
+            frameToRemove.style.transform = 'translateY(-20px)';
+            frameToRemove.style.opacity = '0';
+
+            setTimeout(() => {
+                frameToRemove.remove();
+            }, 300);
+        }
+    }
+
+    function showMemoryLayout() {
+        // Highlight memory sections with animation
+        document.querySelectorAll('.memory-section').forEach((section, index) => {
+            setTimeout(() => {
+                section.style.transform = 'scale(1.05)';
+                section.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+
+                setTimeout(() => {
+                    section.style.transform = 'scale(1)';
+                    section.style.boxShadow = 'none';
+                }, 1000);
+            }, index * 300);
+        });
+    }
+
+    function resetDemo() {
+        if (simulationInterval) {
+            clearInterval(simulationInterval);
+            simulationInterval = null;
+        }
+
+        // Clear active states
+        document.querySelectorAll('.state-box').forEach(box => {
+            box.classList.remove('state-active');
+        });
+
+        // Reset description
+        document.getElementById('state-description').innerHTML = `
+                <h4>Click on a state to learn more!</h4>
+                <p>Each thread goes through these states during its lifetime.</p>
+            `;
+
+        // Clear timeline
+        document.getElementById('execution-timeline').innerHTML = '';
+
+        // Reset stacks to original state
+        const stacks = document.querySelectorAll('.thread-stack');
+        stacks.forEach(stack => {
+            const frames = stack.querySelectorAll('.stack-frame');
+            // Remove any dynamically added frames (keep original 4-6)
+            frames.forEach((frame, index) => {
+                if (index > 3 && stack.id === 'thread1-stack') frame.remove();
+                if (index > 5 && stack.id === 'thread2-stack') frame.remove();
+            });
+        });
+
+        currentState = null;
+    }
+</script>
+</body>
+</html>

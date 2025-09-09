@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thread Pool vs Individual Threads Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .demo-area {
+            padding: 30px;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #dee2e6;
+        }
+
+        .demo-section.active {
+            border-color: #007bff;
+            box-shadow: 0 8px 25px rgba(0,123,255,0.3);
+        }
+
+        .demo-section.individual {
+            border-color: #dc3545;
+        }
+
+        .demo-section.individual.active {
+            border-color: #dc3545;
+            box-shadow: 0 8px 25px rgba(220,53,69,0.3);
+        }
+
+        .demo-section.threadpool {
+            border-color: #28a745;
+        }
+
+        .demo-section.threadpool.active {
+            border-color: #28a745;
+            box-shadow: 0 8px 25px rgba(40,167,69,0.3);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .individual .section-title {
+            color: #dc3545;
+        }
+
+        .threadpool .section-title {
+            color: #28a745;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .individual .metric-value {
+            color: #dc3545;
+        }
+
+        .threadpool .metric-value {
+            color: #28a745;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .threads-visualization {
+            min-height: 200px;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: white;
+            overflow: hidden;
+        }
+
+        .thread-item {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 8px;
+            margin: 5px;
+            position: relative;
+            animation: threadAppear 0.5s ease;
+            transition: all 0.3s ease;
+        }
+
+        .thread-item.individual-thread {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        }
+
+        .thread-item.pool-thread {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: 3px solid #155724;
+        }
+
+        .thread-item.working {
+            animation: pulse 1.5s infinite;
+            transform: scale(1.1);
+        }
+
+        .thread-item.completed {
+            background: #6c757d;
+            transform: scale(0.8);
+            opacity: 0.6;
+        }
+
+        @keyframes threadAppear {
+            from {
+                opacity: 0;
+                transform: scale(0);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1.1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .task-counter {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ffc107;
+            color: #856404;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-bar-container {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .individual .progress-bar {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        }
+
+        .threadpool .progress-bar {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+
+        .status-text {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            min-height: 20px;
+        }
+
+        .individual .status-text {
+            color: #dc3545;
+        }
+
+        .threadpool .status-text {
+            color: #28a745;
+        }
+
+        .execution-log {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .pros-cons-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #dee2e6;
+        }
+
+        .problems-section {
+            border-color: #dc3545;
+        }
+
+        .benefits-section {
+            border-color: #28a745;
+        }
+
+        .pros-cons h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .problems-section h3 {
+            color: #dc3545;
+        }
+
+        .benefits-section h3 {
+            color: #28a745;
+        }
+
+        .pros-cons ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .pros-cons li {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .problems-section li {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .benefits-section li {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        @media (max-width: 1024px) {
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🧵 Thread Pool vs Individual Threads</h1>
+        <p>Interactive Comparison of Threading Approaches</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="startBasicDemo()">▶️ Basic Demo (10 Tasks)</button>
+        <button class="btn" onclick="startHeavyLoadDemo()">⚡ Heavy Load (100 Tasks)</button>
+        <button class="btn" onclick="resetDemo()">🔄 Reset</button>
+    </div>
+
+    <div class="demo-area">
+        <div class="comparison-container">
+            <!-- Individual Threads Section -->
+            <div class="demo-section individual" id="individualSection">
+                <div class="section-title">❌ Individual Threads Approach</div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="individualThreadsCount">0</div>
+                        <div class="metric-label">Threads Created</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="individualMemory">0 MB</div>
+                        <div class="metric-label">Memory Usage</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="individualTime">0 ms</div>
+                        <div class="metric-label">Execution Time</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="individualCompleted">0</div>
+                        <div class="metric-label">Tasks Completed</div>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="individualProgress" style="width: 0%;"></div>
+                </div>
+
+                <div class="status-text" id="individualStatus">Ready to start</div>
+
+                <div class="threads-visualization" id="individualThreadsViz">
+                    <!-- Individual threads will appear here -->
+                </div>
+            </div>
+
+            <!-- Thread Pool Section -->
+            <div class="demo-section threadpool" id="threadpoolSection">
+                <div class="section-title">✅ Thread Pool Approach</div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="poolThreads">0</div>
+                        <div class="metric-label">Threads Created</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="poolMemory">0 MB</div>
+                        <div class="metric-label">Memory Usage</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="poolTime">0 ms</div>
+                        <div class="metric-label">Execution Time</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="poolCompleted">0</div>
+                        <div class="metric-label">Tasks Completed</div>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="poolProgress" style="width: 0%;"></div>
+                </div>
+
+                <div class="status-text" id="poolStatus">Ready to start</div>
+
+                <div class="threads-visualization" id="poolThreadsViz">
+                    <!-- Thread pool workers will appear here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="pros-cons">
+            <div class="pros-cons-section problems-section">
+                <h3>❌ Problems with Individual Threads</h3>
+                <ul>
+                    <li>❌ High memory usage (1MB per thread)</li>
+                    <li>❌ Thread creation overhead</li>
+                    <li>❌ No limit on concurrent threads</li>
+                    <li>❌ System can run out of resources</li>
+                    <li>❌ Context switching overhead</li>
+                    <li>❌ Poor scalability</li>
+                </ul>
+            </div>
+
+            <div class="pros-cons-section benefits-section">
+                <h3>✅ Benefits of Thread Pool</h3>
+                <ul>
+                    <li>✅ Limited memory usage</li>
+                    <li>✅ Thread reuse (no creation overhead)</li>
+                    <li>✅ Controlled concurrency</li>
+                    <li>✅ Better resource management</li>
+                    <li>✅ Task queuing when threads busy</li>
+                    <li>✅ Automatic thread lifecycle management</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="execution-log" id="executionLog">
+            <div>=== Thread Pool vs Individual Threads Demo ===</div>
+            <div>Click 'Basic Demo' to see 10 tasks comparison</div>
+            <div>Click 'Heavy Load' to see 100 tasks comparison</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let demoRunning = false;
+    let taskCount = 0;
+
+    function logMessage(message) {
+        const log = document.getElementById('executionLog');
+        const timestamp = new Date().toLocaleTimeString();
+        log.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function updateMetric(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        }
+    }
+
+    function updateProgress(type, progress) {
+        const element = document.getElementById(`${type}Progress`);
+        if (element) {
+            element.style.width = `${progress}%`;
+        }
+    }
+
+    function updateStatus(type, status) {
+        const element = document.getElementById(`${type}Status`);
+        if (element) {
+            element.textContent = status;
+        }
+    }
+
+    function createThread(containerId, className, taskNumber = null) {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+
+        const thread = document.createElement('div');
+        thread.className = `thread-item ${className}`;
+
+        if (taskNumber) {
+            const counter = document.createElement('div');
+            counter.className = 'task-counter';
+            counter.textContent = taskNumber;
+            thread.appendChild(counter);
+        }
+
+        container.appendChild(thread);
+        return thread;
+    }
+
+    function simulateIndividual(numTasks) {
+        const section = document.getElementById('individualSection');
+        section.classList.add('active');
+
+        const container = document.getElementById('individualThreadsViz');
+        container.innerHTML = '';
+
+        updateStatus('individual', 'Creating threads...');
+        logMessage(`Creating ${numTasks} individual threads`);
+
+        let completed = 0;
+        const startTime = Date.now();
+
+        // Create and execute threads
+        for (let i = 1; i <= numTasks; i++) {
+            setTimeout(() => {
+                const thread = createThread('individualThreadsViz', 'individual-thread', i);
+
+                updateMetric('individualThreadsCount', i);
+                updateMetric('individualMemory', `${i} MB`);
+
+                // Start working
+                setTimeout(() => {
+                    if (thread) thread.classList.add('working');
+                    logMessage(`Task-${i} started by thread-${i}`);
+
+                    // Complete work
+                    setTimeout(() => {
+                        if (thread) {
+                            thread.classList.remove('working');
+                            thread.classList.add('completed');
+                        }
+                        completed++;
+
+                        const elapsed = Date.now() - startTime;
+                        updateMetric('individualTime', `${elapsed} ms`);
+                        updateMetric('individualCompleted', completed);
+                        updateProgress('individual', (completed / numTasks) * 100);
+
+                        logMessage(`Task-${i} completed by thread-${i}`);
+
+                        if (completed === numTasks) {
+                            updateStatus('individual', 'All tasks completed!');
+                            section.classList.remove('active');
+                            logMessage(`Individual threads finished in ${elapsed}ms`);
+                        }
+                    }, 1000);
+                }, 100);
+            }, i * 100);
+        }
+    }
+
+    function simulateThreadPool(numTasks) {
+        const section = document.getElementById('threadpoolSection');
+        section.classList.add('active');
+
+        const container = document.getElementById('poolThreadsViz');
+        container.innerHTML = '';
+
+        const poolSize = numTasks > 50 ? 10 : 3;
+        updateStatus('threadpool', `Creating pool with ${poolSize} threads...`);
+        logMessage(`Creating thread pool with ${poolSize} threads`);
+
+        // Create pool threads
+        const poolThreads = [];
+        for (let i = 1; i <= poolSize; i++) {
+            const thread = createThread('poolThreadsViz', 'pool-thread');
+            poolThreads.push({ element: thread, busy: false, taskCount: 0 });
+        }
+
+        updateMetric('poolThreads', poolSize);
+        updateMetric('poolMemory', `${poolSize} MB`);
+
+        let completed = 0;
+        let submitted = 0;
+        const startTime = Date.now();
+
+        function processTask() {
+            if (submitted >= numTasks) return;
+
+            const availableThread = poolThreads.find(t => !t.busy);
+            if (!availableThread) {
+                setTimeout(processTask, 100);
+                return;
+            }
+
+            submitted++;
+            const taskId = submitted;
+            availableThread.busy = true;
+            availableThread.taskCount++;
+
+            // Update task counter
+            let counter = availableThread.element.querySelector('.task-counter');
+            if (!counter) {
+                counter = document.createElement('div');
+                counter.className = 'task-counter';
+                availableThread.element.appendChild(counter);
+            }
+            counter.textContent = availableThread.taskCount;
+
+            availableThread.element.classList.add('working');
+            logMessage(`PoolTask-${taskId} started by pool-thread-${poolThreads.indexOf(availableThread) + 1}`);
+
+            setTimeout(() => {
+                availableThread.element.classList.remove('working');
+                availableThread.busy = false;
+                completed++;
+
+                const elapsed = Date.now() - startTime;
+                updateMetric('poolTime', `${elapsed} ms`);
+                updateMetric('poolCompleted', completed);
+                updateProgress('threadpool', (completed / numTasks) * 100);
+
+                logMessage(`PoolTask-${taskId} completed by pool-thread-${poolThreads.indexOf(availableThread) + 1}`);
+
+                if (completed === numTasks) {
+                    updateStatus('threadpool', 'All tasks completed!');
+                    section.classList.remove('active');
+                    logMessage(`Thread pool finished in ${elapsed}ms`);
+                }
+
+                // Process next task
+                if (submitted < numTasks) {
+                    setTimeout(processTask, 50);
+                }
+            }, 1000);
+
+            // Continue processing
+            if (submitted < numTasks) {
+                setTimeout(processTask, 50);
+            }
+        }
+
+        processTask();
+    }
+
+    function startBasicDemo() {
+        if (demoRunning) return;
+        demoRunning = true;
+        taskCount = 10;
+
+        resetDemo();
+
+        logMessage('=== Starting Basic Demo (10 tasks) ===');
+
+        // Run both simulations
+        simulateIndividual(taskCount);
+        setTimeout(() => simulateThreadPool(taskCount), 500);
+
+        // Re-enable buttons after completion
+        setTimeout(() => {
+            demoRunning = false;
+        }, 15000);
+    }
+
+    function startHeavyLoadDemo() {
+        if (demoRunning) return;
+        demoRunning = true;
+
+        resetDemo();
+
+        logMessage('=== Starting Heavy Load Demo (100 tasks) ===');
+        logMessage('Simulating 100 tasks - showing theoretical results...');
+
+        // Show theoretical results for 100 tasks
+        setTimeout(() => {
+            updateMetric('individualThreadsCount', 100);
+            updateMetric('individualMemory', '100 MB');
+            updateMetric('individualTime', '2000 ms');
+            updateMetric('individualCompleted', 100);
+            updateProgress('individual', 100);
+            updateStatus('individual', 'High resource usage - 100 threads created');
+
+            updateMetric('poolThreads', 10);
+            updateMetric('poolMemory', '10 MB');
+            updateMetric('poolTime', '1200 ms');
+            updateMetric('poolCompleted', 100);
+            updateProgress('threadpool', 100);
+            updateStatus('threadpool', 'Efficient - Only 10 threads reused');
+
+            logMessage('Individual Threads: 100 threads, 100MB memory, 2000ms');
+            logMessage('Thread Pool: 10 threads reused, 10MB memory, 1200ms');
+            logMessage('Thread Pool wins with 90% less memory and 40% better time!');
+
+            demoRunning = false;
+        }, 2000);
+    }
+
+    function resetDemo() {
+        // Clear metrics
+        updateMetric('individualThreadsCount', 0);
+        updateMetric('individualMemory', '0 MB');
+        updateMetric('individualTime', '0 ms');
+        updateMetric('individualCompleted', 0);
+
+        updateMetric('poolThreads', 0);
+        updateMetric('poolMemory', '0 MB');
+        updateMetric('poolTime', '0 ms');
+        updateMetric('poolCompleted', 0);
+
+        // Reset progress bars
+        updateProgress('individual', 0);
+        updateProgress('threadpool', 0);
+
+        // Reset status
+        updateStatus('individual', 'Ready to start');
+        updateStatus('threadpool', 'Ready to start');
+
+        // Clear visualizations
+        const individualViz = document.getElementById('individualThreadsViz');
+        const poolViz = document.getElementById('poolThreadsViz');
+        if (individualViz) individualViz.innerHTML = '';
+        if (poolViz) poolViz.innerHTML = '';
+
+        // Remove active classes
+        const individualSection = document.getElementById('individualSection');
+        const poolSection = document.getElementById('threadpoolSection');
+        if (individualSection) individualSection.classList.remove('active');
+        if (poolSection) poolSection.classList.remove('active');
+
+        // Reset log
+        const log = document.getElementById('executionLog');
+        if (log) {
+            log.innerHTML = `
+                    <div>=== Thread Pool vs Individual Threads Demo ===</div>
+                    <div>Click 'Basic Demo' to see 10 tasks comparison</div>
+                    <div>Click 'Heavy Load' to see 100 tasks comparison</div>
+                `;
+        }
+    }
+</script>
+</body>
+</html>

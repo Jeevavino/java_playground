@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Thread Pool Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .demo-area {
+            padding: 30px;
+        }
+
+        .pool-info {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .pool-info h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .pool-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #bbdefb;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .thread-pool-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .thread-pool-area {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #495057;
+            text-align: center;
+        }
+
+        .thread-workers {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .thread-worker {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.8s ease; /* Slower transition */
+        }
+
+        .thread-worker.busy {
+            border-color: #28a745;
+            background: linear-gradient(45deg, #d4edda, #f8fff9);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .thread-worker.idle {
+            border-color: #6c757d;
+            background: #f8f9fa;
+        }
+
+        .worker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .worker-name {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .worker-status {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: all 0.8s ease; /* Slower status transition */
+        }
+
+        .status-idle {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .status-busy {
+            background: #d4edda;
+            color: #155724;
+            animation: pulse 3s infinite; /* Slower pulse */
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .worker-task {
+            font-size: 0.9rem;
+            color: #666;
+            transition: all 0.8s ease; /* Slower text transition */
+        }
+
+        .worker-progress {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 1s ease; /* Slower progress animation */
+        }
+
+        .task-queue-area {
+            background: #fff3cd;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .queue-container {
+            min-height: 200px;
+        }
+
+        .task-item {
+            background: white;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #856404;
+            transition: all 1s ease; /* Slower task transitions */
+            animation: slideIn 1.2s ease; /* Slower slide in */
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px); /* Slide from further */
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .task-item.moving {
+            animation: moveToWorker 2s ease-out; /* Much slower movement */
+        }
+
+        @keyframes moveToWorker {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            50% {
+                transform: translateX(-150px);
+                opacity: 0.5;
+            }
+            to {
+                transform: translateX(-300px);
+                opacity: 0;
+            }
+        }
+
+        .execution-log {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .task-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .flow-step {
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            min-width: 120px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: #007bff;
+        }
+
+        .completed-tasks {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .completed-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .completed-task {
+            background: #155724;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            animation: completedAppear 1.5s ease; /* Slower completion animation */
+        }
+
+        @keyframes completedAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .timeline {
+            position: relative;
+            margin: 20px 0;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            opacity: 0.3;
+            transition: opacity 1.2s ease; /* Slower timeline reveal */
+        }
+
+        .timeline-item.active {
+            opacity: 1;
+        }
+
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            background: #007bff;
+            border-radius: 50%;
+            margin-right: 15px;
+            transition: all 0.8s ease;
+        }
+
+        .timeline-item.active .timeline-dot {
+            background: #28a745;
+            transform: scale(1.2);
+        }
+
+        .timeline-content {
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        @media (max-width: 1024px) {
+            .thread-pool-container {
+                grid-template-columns: 1fr;
+            }
+
+            .pool-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🏊‍♂️ Java Thread Pool Demo</h1>
+        <p>Fixed Thread Pool with 3 Workers Processing 6 Tasks (Slower Animation)</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="startDemo()">▶️ Start Thread Pool</button>
+        <button class="btn" onclick="resetDemo()">🔄 Reset Demo</button>
+        <button class="btn" onclick="addMoreTasks()">➕ Add 3 More Tasks</button>
+    </div>
+
+    <div class="demo-area">
+        <div class="pool-info">
+            <h3>ExecutorService.newFixedThreadPool(3)</h3>
+            <p>A thread pool with exactly 3 worker threads that process tasks from a shared queue</p>
+            <div class="pool-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="poolSize">3</div>
+                    <div class="stat-label">Pool Size</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="queuedTasks">0</div>
+                    <div class="stat-label">Queued Tasks</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="activeTasks">0</div>
+                    <div class="stat-label">Active Tasks</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="completedTasks">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="task-flow">
+            <div class="flow-step">Task Submitted</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Added to Queue</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Assigned to Worker</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Executed</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Completed</div>
+        </div>
+
+        <div class="thread-pool-container">
+            <div class="thread-pool-area">
+                <div class="section-title">🧵 Thread Pool Workers</div>
+                <div class="thread-workers" id="threadWorkers">
+                    <!-- Workers will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="task-queue-area">
+                <div class="section-title">📋 Task Queue</div>
+                <div class="queue-container" id="taskQueue">
+                    <div style="text-align: center; color: #856404; font-style: italic; margin-top: 50px;">
+                        Queue is empty<br>
+                        Click "Start Thread Pool" to add tasks
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline" id="timeline">
+            <div class="section-title">📅 Execution Timeline</div>
+            <!-- Timeline items will be added dynamically -->
+        </div>
+
+        <div class="completed-tasks">
+            <div class="section-title">✅ Completed Tasks</div>
+            <div class="completed-list" id="completedList">
+                <!-- Completed tasks will appear here -->
+            </div>
+        </div>
+
+        <div class="execution-log" id="executionLog">
+            <div>=== Simple Thread Pool Demo ===</div>
+            <div>Ready to demonstrate ExecutorService.newFixedThreadPool(3)</div>
+            <div>Click 'Start Thread Pool' to submit 6 tasks...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let demoRunning = false;
+    let taskCounter = 0;
+    let completedTaskCount = 0;
+    let workers = [];
+    let taskQueue = [];
+    let timelineItems = [];
+
+    function initializeWorkers() {
+        const workersContainer = document.getElementById('threadWorkers');
+        workersContainer.innerHTML = '';
+        workers = [];
+
+        for (let i = 1; i <= 3; i++) {
+            const worker = {
+                id: i,
+                name: `pool-thread-${i}`,
+                busy: false,
+                currentTask: null,
+                progress: 0
+            };
+            workers.push(worker);
+
+            const workerElement = document.createElement('div');
+            workerElement.className = 'thread-worker idle';
+            workerElement.id = `worker-${i}`;
+            workerElement.innerHTML = `
+                    <div class="worker-header">
+                        <div class="worker-name">🧵 ${worker.name}</div>
+                        <div class="worker-status status-idle" id="status-${i}">IDLE</div>
+                    </div>
+                    <div class="worker-task" id="task-${i}">Waiting for tasks...</div>
+                    <div class="worker-progress">
+                        <div class="progress-bar" id="progress-${i}"></div>
+                    </div>
+                `;
+            workersContainer.appendChild(workerElement);
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('poolSize').textContent = '3';
+        document.getElementById('queuedTasks').textContent = taskQueue.length;
+        document.getElementById('activeTasks').textContent = workers.filter(w => w.busy).length;
+        document.getElementById('completedTasks').textContent = completedTaskCount;
+    }
+
+    function logMessage(message) {
+        const log = document.getElementById('executionLog');
+        const timestamp = new Date().toLocaleTimeString();
+        log.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function addTimelineItem(message) {
+        const timeline = document.getElementById('timeline');
+        const item = document.createElement('div');
+        item.className = 'timeline-item';
+        item.innerHTML = `
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">${message}</div>
+            `;
+        timeline.appendChild(item);
+        timelineItems.push(item);
+
+        // Activate timeline item with slower delay
+        setTimeout(() => {
+            item.classList.add('active');
+        }, 300);
+    }
+
+    function addTaskToQueue(taskName) {
+        const queueContainer = document.getElementById('taskQueue');
+
+        // Clear empty message if it exists
+        if (taskQueue.length === 0) {
+            queueContainer.innerHTML = '';
+        }
+
+        const taskElement = document.createElement('div');
+        taskElement.className = 'task-item';
+        taskElement.textContent = taskName;
+        taskElement.id = `queued-${taskName}`;
+        queueContainer.appendChild(taskElement);
+
+        taskQueue.push({
+            name: taskName,
+            element: taskElement
+        });
+
+        updateStats();
+        logMessage(`${taskName} submitted to thread pool`);
+        addTimelineItem(`${taskName} added to queue`);
+    }
+
+    function assignTaskToWorker() {
+        if (taskQueue.length === 0) return;
+
+        const availableWorker = workers.find(w => !w.busy);
+        if (!availableWorker) return;
+
+        const task = taskQueue.shift();
+        availableWorker.busy = true;
+        availableWorker.currentTask = task.name;
+        availableWorker.progress = 0;
+
+        // Remove task from queue with slower animation
+        task.element.classList.add('moving');
+        setTimeout(() => {
+            if (task.element.parentNode) {
+                task.element.remove();
+            }
+        }, 2000); // Increased from 1000ms to 2000ms
+
+        // Update worker UI with delay for smoother transition
+        setTimeout(() => {
+            const workerElement = document.getElementById(`worker-${availableWorker.id}`);
+            const statusElement = document.getElementById(`status-${availableWorker.id}`);
+            const taskElement = document.getElementById(`task-${availableWorker.id}`);
+            const progressElement = document.getElementById(`progress-${availableWorker.id}`);
+
+            workerElement.className = 'thread-worker busy';
+            statusElement.textContent = 'BUSY';
+            statusElement.className = 'worker-status status-busy';
+            taskElement.textContent = `Executing: ${task.name}`;
+            progressElement.style.width = '0%';
+
+            updateStats();
+            logMessage(`${task.name} started by ${availableWorker.name}`);
+            addTimelineItem(`${task.name} assigned to ${availableWorker.name}`);
+
+            // Start task execution after UI update
+            simulateTaskExecution(availableWorker);
+        }, 500);
+    }
+
+    function simulateTaskExecution(worker) {
+        let progress = 0;
+        const progressElement = document.getElementById(`progress-${worker.id}`);
+
+        // Much slower progress - 200ms intervals for 5 seconds total (was 100ms for 2 seconds)
+        const progressInterval = setInterval(() => {
+            progress += 2; // Smaller increments for smoother animation
+            progressElement.style.width = `${progress}%`;
+
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+                setTimeout(() => {
+                    completeTask(worker);
+                }, 500); // Small delay before completion
+            }
+        }, 200); // Increased from 100ms to 200ms
+    }
+
+    function completeTask(worker) {
+        const taskName = worker.currentTask;
+
+        // Update worker UI with slower transitions
+        setTimeout(() => {
+            const workerElement = document.getElementById(`worker-${worker.id}`);
+            const statusElement = document.getElementById(`status-${worker.id}`);
+            const taskElement = document.getElementById(`task-${worker.id}`);
+            const progressElement = document.getElementById(`progress-${worker.id}`);
+
+            workerElement.className = 'thread-worker idle';
+            statusElement.textContent = 'IDLE';
+            statusElement.className = 'worker-status status-idle';
+            taskElement.textContent = 'Waiting for tasks...';
+            progressElement.style.width = '0%';
+
+            // Reset worker state
+            worker.busy = false;
+            worker.currentTask = null;
+            worker.progress = 0;
+
+            // Add to completed tasks
+            const completedList = document.getElementById('completedList');
+            const completedTask = document.createElement('div');
+            completedTask.className = 'completed-task';
+            completedTask.textContent = taskName;
+            completedList.appendChild(completedTask);
+
+            completedTaskCount++;
+            updateStats();
+            logMessage(`${taskName} completed by ${worker.name}`);
+            addTimelineItem(`${taskName} completed successfully`);
+
+            // Try to assign next task with longer delay
+            setTimeout(() => {
+                assignTaskToWorker();
+            }, 1000); // Increased from 500ms to 1000ms
+        }, 300);
+    }
+
+    function processTaskQueue() {
+        // Assign tasks to available workers with delays between assignments
+        const assignNext = () => {
+            if (taskQueue.length > 0 && workers.some(w => !w.busy)) {
+                assignTaskToWorker();
+                setTimeout(assignNext, 800); // Delay between task assignments
+            }
+        };
+        assignNext();
+    }
+
+    async function startDemo() {
+        if (demoRunning) return;
+
+        demoRunning = true;
+        resetDemo();
+
+        const startBtn = document.querySelector('button[onclick="startDemo()"]');
+        startBtn.disabled = true;
+        startBtn.textContent = '⏳ Running...';
+
+        logMessage('=== Simple Thread Pool Demo ===');
+        addTimelineItem('Thread pool created with 3 workers');
+
+        // Submit 6 tasks with longer delays between submissions
+        for (let i = 1; i <= 6; i++) {
+            addTaskToQueue(`Task-${i}`);
+            await new Promise(resolve => setTimeout(resolve, 800)); // Increased from 300ms to 800ms
+        }
+
+        addTimelineItem('All 6 tasks submitted to pool');
+
+        // Start processing with delay
+        setTimeout(() => {
+            processTaskQueue();
+        }, 1000);
+
+        // Wait for all tasks to complete
+        const checkCompletion = setInterval(() => {
+            if (completedTaskCount >= 6 && taskQueue.length === 0 && !workers.some(w => w.busy)) {
+                clearInterval(checkCompletion);
+                setTimeout(() => {
+                    logMessage('All tasks completed!');
+                    addTimelineItem('Thread pool execution completed');
+
+                    startBtn.disabled = false;
+                    startBtn.textContent = '▶️ Start Thread Pool';
+                    demoRunning = false;
+                }, 1000);
+            }
+        }, 1000); // Check less frequently
+    }
+
+    function addMoreTasks() {
+        if (demoRunning || taskQueue.length > 0 || workers.some(w => w.busy)) return;
+
+        for (let i = 1; i <= 3; i++) {
+            taskCounter++;
+            setTimeout(() => {
+                addTaskToQueue(`Extra-Task-${taskCounter - 3 + i}`);
+            }, i * 600); // Stagger the task additions
+        }
+
+        setTimeout(() => {
+            processTaskQueue();
+        }, 2000);
+    }
+
+    function resetDemo() {
+        demoRunning = false;
+        taskCounter = 0;
+        completedTaskCount = 0;
+        taskQueue = [];
+        timelineItems = [];
+
+        // Reset workers
+        initializeWorkers();
+        updateStats();
+
+        // Clear UI
+        document.getElementById('taskQueue').innerHTML = `
+                <div style="text-align: center; color: #856404; font-style: italic; margin-top: 50px;">
+                    Queue is empty<br>
+                    Click "Start Thread Pool" to add tasks
+                </div>
+            `;
+        document.getElementById('completedList').innerHTML = '';
+        document.getElementById('timeline').innerHTML = '<div class="section-title">📅 Execution Timeline</div>';
+
+        // Reset log
+        document.getElementById('executionLog').innerHTML = `
+                <div>=== Simple Thread Pool Demo ===</div>
+                <div>Ready to demonstrate ExecutorService.newFixedThreadPool(3)</div>
+                <div>Click 'Start Thread Pool' to submit 6 tasks...</div>
+            `;
+
+        // Reset button
+        const startBtn = document.querySelector('button[onclick="startDemo()"]');
+        startBtn.disabled = false;
+        startBtn.textContent = '▶️ Start Thread Pool';
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeWorkers();
+        updateStats();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Thread Collaboration Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .demo-area {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .main-visualization {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .array-container {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .array-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #495057;
+        }
+
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .number-cell {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.5s ease;
+            background: white;
+        }
+
+        .number-cell.processing-sum {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            border-color: #e91e63;
+            transform: scale(1.1);
+            animation: pulse 1s infinite;
+        }
+
+        .number-cell.processing-product {
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+            border-color: #00bcd4;
+            transform: scale(1.1);
+            animation: pulse 1s infinite;
+        }
+
+        .number-cell.processing-print {
+            background: linear-gradient(45deg, #ffecd2, #fcb69f);
+            border-color: #ff9800;
+            transform: scale(1.1);
+            animation: pulse 1s infinite;
+        }
+
+        .number-cell.processed-sum {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .number-cell.processed-product {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+        }
+
+        .number-cell.processed-print {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1.1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .thread-container {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .thread-container.active {
+            border-color: #007bff;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        }
+
+        .thread-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .thread-name {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .thread-status {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-waiting {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .status-running {
+            background: #d4edda;
+            color: #155724;
+            animation: blink 1s infinite;
+        }
+
+        .status-completed {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.5; }
+        }
+
+        .thread-progress {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .sum-progress { background: linear-gradient(45deg, #ff9a9e, #fecfef); }
+        .product-progress { background: linear-gradient(45deg, #a8edea, #fed6e3); }
+        .print-progress { background: linear-gradient(45deg, #ffecd2, #fcb69f); }
+
+        .thread-details {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .result-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .result-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+
+        .result-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .execution-log {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .main-thread-status {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .collaboration-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-title {
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 10px;
+        }
+
+        .info-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-list li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-list li::before {
+            content: "🧵";
+            position: absolute;
+            left: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .demo-area {
+                grid-template-columns: 1fr;
+            }
+
+            .number-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🤝 Java Thread Collaboration</h1>
+        <p>Interactive Demo of Multiple Threads Working Together on Shared Data</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="startDemo()">▶️ Start Collaboration</button>
+        <button class="btn" onclick="resetDemo()">🔄 Reset Demo</button>
+        <button class="btn" onclick="pauseDemo()" id="pauseBtn" style="display:none;">⏸️ Pause</button>
+    </div>
+
+    <div class="demo-area">
+        <div class="main-visualization">
+            <div class="collaboration-info">
+                <div class="info-title">Thread Collaboration Concept</div>
+                <ul class="info-list">
+                    <li><strong>SumCalculator:</strong> Processes first half (1-5), calculates sum</li>
+                    <li><strong>ProductCalculator:</strong> Processes second half (6-10), calculates product</li>
+                    <li><strong>ArrayPrinter:</strong> Prints all elements with delays</li>
+                    <li><strong>Main Thread:</strong> Waits for all using join() method</li>
+                </ul>
+            </div>
+
+            <div class="array-container">
+                <div class="array-title">Shared Array: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]</div>
+                <div class="number-grid" id="numberGrid">
+                    <!-- Numbers will be generated by JavaScript -->
+                </div>
+                <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 20px; height: 20px; background: linear-gradient(45deg, #ff9a9e, #fecfef); border-radius: 4px; margin-right: 8px;"></div>
+                        <span>Sum Thread (1-5)</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 20px; height: 20px; background: linear-gradient(45deg, #a8edea, #fed6e3); border-radius: 4px; margin-right: 8px;"></div>
+                        <span>Product Thread (6-10)</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 20px; height: 20px; background: linear-gradient(45deg, #ffecd2, #fcb69f); border-radius: 4px; margin-right: 8px;"></div>
+                        <span>Print Thread (All)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-thread-status" id="mainThreadStatus">
+                Main Thread: Ready to start collaboration
+            </div>
+
+            <div class="execution-log" id="executionLog">
+                <div>=== Simple Thread Collaboration Demo ===</div>
+                <div>Goal: Calculate sum, product, and print array using 3 threads</div>
+                <div>Click 'Start Collaboration' to begin...</div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <!-- Thread 1: Sum Calculator -->
+            <div class="thread-container" id="sumThread">
+                <div class="thread-header">
+                    <div class="thread-name">🧮 SumCalculator</div>
+                    <div class="thread-status status-waiting" id="sumStatus">Waiting</div>
+                </div>
+                <div class="thread-progress">
+                    <div class="progress-fill sum-progress" id="sumProgress" style="width: 0%;"></div>
+                </div>
+                <div class="thread-details" id="sumDetails">Ready to calculate sum of elements 1-5</div>
+            </div>
+
+            <!-- Thread 2: Product Calculator -->
+            <div class="thread-container" id="productThread">
+                <div class="thread-header">
+                    <div class="thread-name">✖️ ProductCalculator</div>
+                    <div class="thread-status status-waiting" id="productStatus">Waiting</div>
+                </div>
+                <div class="thread-progress">
+                    <div class="progress-fill product-progress" id="productProgress" style="width: 0%;"></div>
+                </div>
+                <div class="thread-details" id="productDetails">Ready to calculate product of elements 6-10</div>
+            </div>
+
+            <!-- Thread 3: Array Printer -->
+            <div class="thread-container" id="printThread">
+                <div class="thread-header">
+                    <div class="thread-name">🖨️ ArrayPrinter</div>
+                    <div class="thread-status status-waiting" id="printStatus">Waiting</div>
+                </div>
+                <div class="thread-progress">
+                    <div class="progress-fill print-progress" id="printProgress" style="width: 0%;"></div>
+                </div>
+                <div class="thread-details" id="printDetails">Ready to print all array elements</div>
+            </div>
+
+            <!-- Results -->
+            <div class="result-card">
+                <div class="result-title">Sum Result</div>
+                <div class="result-value" id="sumResult">0</div>
+                <div class="result-description">Sum of elements 1-5</div>
+            </div>
+
+            <div class="result-card">
+                <div class="result-title">Product Result</div>
+                <div class="result-value" id="productResult">1</div>
+                <div class="result-description">Product of elements 6-10</div>
+            </div>
+
+            <div class="result-card">
+                <div class="result-title">Combined Result</div>
+                <div class="result-value" id="combinedResult">1</div>
+                <div class="result-description">Sum + Product</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let demoRunning = false;
+    let demoPaused = false;
+    let currentSum = 0;
+    let currentProduct = 1;
+    let printedElements = '';
+
+    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    function initializeGrid() {
+        const grid = document.getElementById('numberGrid');
+        grid.innerHTML = '';
+        numbers.forEach((num, index) => {
+            const cell = document.createElement('div');
+            cell.className = 'number-cell';
+            cell.textContent = num;
+            cell.id = `cell-${index}`;
+            grid.appendChild(cell);
+        });
+    }
+
+    function logMessage(message) {
+        const log = document.getElementById('executionLog');
+        const timestamp = new Date().toLocaleTimeString();
+        log.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function updateThreadStatus(threadName, status, details, progress) {
+        document.getElementById(`${threadName}Status`).textContent = status;
+        document.getElementById(`${threadName}Status`).className = `thread-status status-${status.toLowerCase()}`;
+        document.getElementById(`${threadName}Details`).textContent = details;
+        document.getElementById(`${threadName}Progress`).style.width = `${progress}%`;
+
+        const container = document.getElementById(`${threadName}Thread`);
+        if (status === 'Running') {
+            container.classList.add('active');
+        } else if (status === 'Completed') {
+            container.classList.remove('active');
+        }
+    }
+
+    function updateMainThreadStatus(message) {
+        document.getElementById('mainThreadStatus').textContent = `Main Thread: ${message}`;
+    }
+
+    function updateResults() {
+        document.getElementById('sumResult').textContent = currentSum;
+        document.getElementById('productResult').textContent = currentProduct;
+        document.getElementById('combinedResult').textContent = currentSum + currentProduct;
+    }
+
+    async function simulateSumCalculator() {
+        updateThreadStatus('sum', 'Running', 'Calculating sum...', 0);
+        logMessage('SumCalculator started...');
+
+        currentSum = 0;
+
+        for (let i = 0; i < 5; i++) {
+            if (demoPaused) {
+                await waitForUnpause();
+            }
+
+            const cell = document.getElementById(`cell-${i}`);
+            cell.className = 'number-cell processing-sum';
+
+            currentSum += numbers[i];
+            updateResults();
+
+            const progress = ((i + 1) / 5) * 100;
+            updateThreadStatus('sum', 'Running', `Added ${numbers[i]}, current sum: ${currentSum}`, progress);
+            logMessage(`Added ${numbers[i]}, current sum: ${currentSum}`);
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            cell.className = 'number-cell processed-sum';
+        }
+
+        updateThreadStatus('sum', 'Completed', `Final sum: ${currentSum}`, 100);
+        logMessage(`SumCalculator finished. Final sum: ${currentSum}`);
+    }
+
+    async function simulateProductCalculator() {
+        updateThreadStatus('product', 'Running', 'Calculating product...', 0);
+        logMessage('ProductCalculator started...');
+
+        currentProduct = 1;
+
+        for (let i = 5; i < 10; i++) {
+            if (demoPaused) {
+                await waitForUnpause();
+            }
+
+            const cell = document.getElementById(`cell-${i}`);
+            cell.className = 'number-cell processing-product';
+
+            currentProduct *= numbers[i];
+            updateResults();
+
+            const progress = ((i - 4) / 5) * 100;
+            updateThreadStatus('product', 'Running', `Multiplied ${numbers[i]}, current product: ${currentProduct}`, progress);
+            logMessage(`Multiplied ${numbers[i]}, current product: ${currentProduct}`);
+
+            await new Promise(resolve => setTimeout(resolve, 700));
+
+            cell.className = 'number-cell processed-product';
+        }
+
+        updateThreadStatus('product', 'Completed', `Final product: ${currentProduct}`, 100);
+        logMessage(`ProductCalculator finished. Final product: ${currentProduct}`);
+    }
+
+    async function simulateArrayPrinter() {
+        updateThreadStatus('print', 'Running', 'Printing array elements...', 0);
+        logMessage('ArrayPrinter started...');
+
+        printedElements = 'Array elements: ';
+
+        for (let i = 0; i < numbers.length; i++) {
+            if (demoPaused) {
+                await waitForUnpause();
+            }
+
+            const cell = document.getElementById(`cell-${i}`);
+            // Don't override other thread's styling if they're still processing
+            if (!cell.className.includes('processing-sum') && !cell.className.includes('processing-product')) {
+                cell.className = 'number-cell processing-print';
+            }
+
+            printedElements += numbers[i] + ' ';
+
+            const progress = ((i + 1) / numbers.length) * 100;
+            updateThreadStatus('print', 'Running', `Printed ${numbers[i]}`, progress);
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            if (!cell.className.includes('processed-sum') && !cell.className.includes('processed-product')) {
+                cell.className = 'number-cell processed-print';
+            }
+        }
+
+        updateThreadStatus('print', 'Completed', 'All elements printed', 100);
+        logMessage('ArrayPrinter finished.');
+    }
+
+    async function waitForUnpause() {
+        while (demoPaused) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+
+    async function startDemo() {
+        if (demoRunning) return;
+
+        demoRunning = true;
+        resetDemo();
+
+        const startBtn = document.querySelector('button[onclick="startDemo()"]');
+        const pauseBtn = document.getElementById('pauseBtn');
+        startBtn.disabled = true;
+        startBtn.textContent = '⏳ Running...';
+        pauseBtn.style.display = 'inline-block';
+
+        updateMainThreadStatus('Starting all threads...');
+        logMessage('Starting all threads...');
+
+        // Start all three threads simultaneously
+        const sumPromise = simulateSumCalculator();
+        const productPromise = simulateProductCalculator();
+        const printPromise = simulateArrayPrinter();
+
+        // Wait for all threads to complete (join operation)
+        updateMainThreadStatus('Waiting for all workers to finish...');
+        logMessage('Main thread waiting for all workers to finish...');
+
+        await Promise.all([sumPromise, productPromise, printPromise]);
+
+        // All threads completed
+        updateMainThreadStatus('All threads completed! Final results available.');
+        logMessage('=== All threads completed! ===');
+        logMessage('Final Results:');
+        logMessage(`Sum of first half (1-5): ${currentSum}`);
+        logMessage(`Product of second half (6-10): ${currentProduct}`);
+        logMessage(`Combined result: ${currentSum + currentProduct}`);
+        logMessage('Main thread finished!');
+
+        startBtn.disabled = false;
+        startBtn.textContent = '▶️ Start Collaboration';
+        pauseBtn.style.display = 'none';
+        demoRunning = false;
+    }
+
+    function pauseDemo() {
+        demoPaused = !demoPaused;
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        if (demoPaused) {
+            pauseBtn.textContent = '▶️ Resume';
+            updateMainThreadStatus('Demo paused - Click Resume to continue');
+        } else {
+            pauseBtn.textContent = '⏸️ Pause';
+            updateMainThreadStatus('Demo resumed - Threads continuing execution');
+        }
+    }
+
+    function resetDemo() {
+        demoRunning = false;
+        demoPaused = false;
+        currentSum = 0;
+        currentProduct = 1;
+        printedElements = '';
+
+        // Reset UI
+        initializeGrid();
+        updateResults();
+        updateMainThreadStatus('Ready to start collaboration');
+
+        // Reset thread status
+        updateThreadStatus('sum', 'Waiting', 'Ready to calculate sum of elements 1-5', 0);
+        updateThreadStatus('product', 'Waiting', 'Ready to calculate product of elements 6-10', 0);
+        updateThreadStatus('print', 'Waiting', 'Ready to print all array elements', 0);
+
+        // Clear log
+        document.getElementById('executionLog').innerHTML = `
+                <div>=== Simple Thread Collaboration Demo ===</div>
+                <div>Goal: Calculate sum, product, and print array using 3 threads</div>
+                <div>Click 'Start Collaboration' to begin...</div>
+            `;
+
+        // Reset buttons
+        const startBtn = document.querySelector('button[onclick="startDemo()"]');
+        const pauseBtn = document.getElementById('pauseBtn');
+        startBtn.disabled = false;
+        startBtn.textContent = '▶️ Start Collaboration';
+        pauseBtn.style.display = 'none';
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeGrid();
+        updateResults();
+    });
+</script>
+</body>
+</html>
