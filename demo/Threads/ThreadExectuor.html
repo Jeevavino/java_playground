@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreadPoolExecutor Demo</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1c;
+            --container-bg: #2b2d31;
+            --text-color: #e2e2e2;
+            --accent-color: #4e8cff;
+            --core-thread-color: #2a9d8f;
+            --surge-thread-color: #e9c46a;
+            --busy-color: #e76f51;
+            --queue-color: #f4a261;
+            --rejected-color: #e63946;
+            --border-color: #444;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2 {
+            text-align: center;
+            color: var(--accent-color);
+        }
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+        }
+        .demo-container {
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .description, .controls {
+            background-color: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid var(--accent-color);
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: center;
+        }
+        .control-item { display: flex; flex-direction: column; }
+        .control-item label { margin-bottom: 5px; font-weight: bold; }
+        .control-item input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: #3c3f44;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+        button {
+            grid-column: 1 / -1; /* Span all columns */
+            padding: 12px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover { background-color: #6fa1ff; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #555; cursor: not-allowed; }
+
+        .visualization {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .pool-area {
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            padding: 10px;
+            min-height: 140px;
+        }
+        .area-title { font-weight: bold; margin-bottom: 10px; text-align: center; }
+        .thread-pool { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .thread {
+            width: 120px;
+            height: 100px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            transition: background-color 0.5s, border-color 0.5s, opacity 0.5s;
+        }
+        .thread.core { border: 2px solid var(--core-thread-color); }
+        .thread.surge { border: 2px dashed var(--surge-thread-color); }
+        .thread.idle { background-color: rgba(42, 157, 143, 0.2); }
+        .thread.busy { background-color: rgba(231, 111, 81, 0.3); border-color: var(--busy-color); }
+        .thread-name { font-weight: bold; }
+        .thread-status { font-style: italic; font-size: 0.9em; }
+
+        .queue-area {
+            border: 2px dashed var(--queue-color);
+            border-radius: 5px;
+            padding: 10px;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .task-queue { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+        .task {
+            background-color: var(--queue-color);
+            color: var(--bg-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            transition: transform 0.5s, opacity 0.5s;
+        }
+        .task.rejected { background-color: var(--rejected-color); color: white; }
+
+        .log-area {
+            margin-top: 20px;
+            background-color: #111;
+            border-radius: 5px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <h1>ThreadPoolExecutor Deep Dive ⚙️</h1>
+
+    <div class="demo-container">
+        <h2>Parameters</h2>
+        <div class="description">
+            The `ThreadPoolExecutor` is highly configurable. It follows a specific set of rules to decide whether to run a new task, queue it, or reject it. This demo visualizes that decision process.
+            <br><b>Note:</b> We are simulating the `AbortPolicy` for rejected tasks. The `CallerRunsPolicy` from your code is another option where the submitting thread runs the task itself.
+        </div>
+
+        <div class="controls">
+            <div class="control-item">
+                <label for="core-size">corePoolSize</label>
+                <input type="number" id="core-size" value="2" min="1">
+            </div>
+            <div class="control-item">
+                <label for="max-size">maximumPoolSize</label>
+                <input type="number" id="max-size" value="4" min="1">
+            </div>
+            <div class="control-item">
+                <label for="queue-capacity">queueCapacity</label>
+                <input type="number" id="queue-capacity" value="3" min="1">
+            </div>
+            <div class="control-item">
+                <label for="num-tasks">Number of Tasks</label>
+                <input type="number" id="num-tasks" value="10" min="1">
+            </div>
+            <button id="run-demo">Run Demo</button>
+        </div>
+    </div>
+
+    <div class="demo-container">
+        <h2>Visualization</h2>
+        <div class="visualization">
+            <div class="pool-area">
+                <div class="area-title">Thread Pool</div>
+                <div id="thread-pool" class="thread-pool"></div>
+            </div>
+            <div class="queue-area">
+                <div class="area-title">Task Queue</div>
+                <div id="task-queue" class="task-queue"></div>
+            </div>
+        </div>
+        <div class="log-area" id="log-area"></div>
+    </div>
+</div>
+
+<script>
+    const runBtn = document.getElementById('run-demo');
+    const poolEl = document.getElementById('thread-pool');
+    const queueEl = document.getElementById('task-queue');
+    const logEl = document.getElementById('log-area');
+
+    // --- Helper Functions ---
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    function logMessage(message) {
+        logEl.innerHTML += `<div>> ${message}</div>`;
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function createThreadElement(id, type) {
+        const thread = document.createElement('div');
+        thread.id = `thread-${id}`;
+        thread.className = `thread idle ${type}`; // type is 'core' or 'surge'
+        thread.innerHTML = `
+                <div class="thread-name">${type === 'core' ? 'Core' : 'Surge'} Thread ${id}</div>
+                <div class="thread-status">(idle)</div>
+                <div class="task-container"></div>`;
+        poolEl.appendChild(thread);
+        return thread;
+    }
+
+    function createTaskElement(id) {
+        const task = document.createElement('div');
+        task.id = `task-${id}`;
+        task.className = 'task';
+        task.innerText = `Task ${id}`;
+        return task;
+    }
+
+    function setThreadState(threadEl, state, taskEl = null) {
+        const statusEl = threadEl.querySelector('.thread-status');
+        const taskContainer = threadEl.querySelector('.task-container');
+        if (state === 'busy') {
+            threadEl.classList.remove('idle');
+            threadEl.classList.add('busy');
+            statusEl.innerText = '(running)';
+            if (taskEl) {
+                taskContainer.innerHTML = '';
+                taskContainer.appendChild(taskEl);
+            }
+        } else { // 'idle'
+            threadEl.classList.remove('busy');
+            threadEl.classList.add('idle');
+            statusEl.innerText = '(idle)';
+            taskContainer.innerHTML = '';
+        }
+    }
+
+    async function processTaskOnThread(thread, task, queue) {
+        const TASK_DURATION = 2500;
+        const threadId = thread.id.split('-')[1];
+
+        setThreadState(thread, 'busy', task.el);
+        logMessage(`Thread ${threadId} is now running Task ${task.id}.`);
+        await sleep(TASK_DURATION);
+        logMessage(`Task ${task.id} completed on Thread ${threadId}.`);
+
+        // After finishing, check the queue for more work
+        if (queue.length > 0) {
+            const nextTask = queue.shift();
+            const nextTaskEl = document.getElementById(nextTask.el.id);
+            if (nextTaskEl) queueEl.removeChild(nextTaskEl);
+            logMessage(`Thread ${threadId} is picking up Task ${nextTask.id} from the queue.`);
+            await processTaskOnThread(thread, nextTask, queue); // Recursively process next task
+        } else {
+            setThreadState(thread, 'idle');
+            // If it's a surge thread, it could be terminated after keepAliveTime
+            if (thread.classList.contains('surge')) {
+                logMessage(`Surge Thread ${threadId} is idle and can now be terminated.`);
+            }
+        }
+    }
+
+    // --- Main Demo Logic ---
+    runBtn.addEventListener('click', async () => {
+        runBtn.disabled = true;
+        poolEl.innerHTML = '';
+        queueEl.innerHTML = '';
+        logEl.innerHTML = '';
+
+        const coreSize = parseInt(document.getElementById('core-size').value);
+        const maxSize = parseInt(document.getElementById('max-size').value);
+        const queueCapacity = parseInt(document.getElementById('queue-capacity').value);
+        const numTasks = parseInt(document.getElementById('num-tasks').value);
+
+        if (maxSize < coreSize) {
+            logMessage("Error: maximumPoolSize cannot be less than corePoolSize.");
+            runBtn.disabled = false;
+            return;
+        }
+
+        const threads = [];
+        const taskQueue = [];
+
+        logMessage(`Executor created with: core=${coreSize}, max=${maxSize}, queue=${queueCapacity}`);
+        await sleep(1000);
+        logMessage(`--- Submitting ${numTasks} tasks ---`);
+        await sleep(500);
+
+        for (let i = 1; i <= numTasks; i++) {
+            const task = { id: i, el: createTaskElement(i) };
+            logMessage(`Submitting Task ${i}...`);
+
+            const activeThreads = threads.filter(t => t.classList.contains('busy')).length;
+            const idleCoreThreads = threads.filter(t => t.classList.contains('core') && t.classList.contains('idle'));
+
+            // Rule 1: If fewer than corePoolSize threads are running, create a new one.
+            if (threads.filter(t => t.classList.contains('core')).length < coreSize) {
+                logMessage(`   ↳ Rule 1: Core pool not full. Creating a new Core Thread.`);
+                const newThread = createThreadElement(threads.length + 1, 'core');
+                threads.push(newThread);
+                processTaskOnThread(newThread, task, taskQueue);
+            }
+            // Rule 1.5: If there is an idle core thread, use it.
+            else if (idleCoreThreads.length > 0) {
+                logMessage(`   ↳ Rule 1.5: Reusing an idle Core Thread.`);
+                processTaskOnThread(idleCoreThreads[0], task, taskQueue);
+            }
+            // Rule 2: If queue is not full, add the task to the queue.
+            else if (taskQueue.length < queueCapacity) {
+                logMessage(`   ↳ Rule 2: All core threads busy. Placing Task ${i} in queue.`);
+                taskQueue.push(task);
+                queueEl.appendChild(task.el);
+            }
+            // Rule 3: If queue is full, try to create a new "surge" thread.
+            else if (threads.length < maxSize) {
+                logMessage(`   ↳ Rule 3: Queue is full. Creating a new Surge Thread.`);
+                const newThread = createThreadElement(threads.length + 1, 'surge');
+                threads.push(newThread);
+                processTaskOnThread(newThread, task, taskQueue);
+            }
+            // Rule 4: If max threads are running and queue is full, reject the task.
+            else {
+                logMessage(`   ↳ Rule 4: All threads busy and queue is full. Task ${i} is REJECTED.`);
+                task.el.classList.add('rejected');
+                // Briefly show it in the queue area as rejected
+                queueEl.appendChild(task.el);
+                await sleep(500);
+                task.el.style.opacity = '0';
+                await sleep(500);
+                queueEl.removeChild(task.el);
+            }
+
+            await sleep(500); // Stagger task submission
+        }
+        // Allow button to be clicked again after a delay, so user can see outcome
+        setTimeout(() => { runBtn.disabled = false; }, 5000);
+    });
+</script>
+</body>
+</html>

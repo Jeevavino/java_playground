@@ -9,11 +9,13 @@ public class ThreadPoolExecutorDemo {
                 4,                              // maximumPoolSize: max 4 threads
                 60L,                            // keepAliveTime: 60 seconds
                 TimeUnit.SECONDS,               // unit: seconds
-                new ArrayBlockingQueue<>(3),    // workQueue: bounded queue (size 3)
+                new ArrayBlockingQueue<>(100),    // workQueue: bounded queue (size 3)
                 new CustomThreadFactory(),      // threadFactory: custom factory
                 new ThreadPoolExecutor.CallerRunsPolicy()  // handler: caller runs
         );
 
+
+        executor.prestartAllCoreThreads();
         // Submit 10 tasks to demonstrate behavior
         for (int i = 1; i <= 10; i++) {
             final int taskId = i;

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExecutorService Thread Pool Demo</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1c;
+            --container-bg: #2b2d31;
+            --text-color: #e2e2e2;
+            --accent-color: #4e8cff;
+            --idle-color: #2a9d8f;
+            --busy-color: #e76f51;
+            --queue-color: #e9c46a;
+            --task-color: #f4a261;
+            --border-color: #444;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+        .demo-container {
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .description {
+            background-color: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid var(--accent-color);
+            margin-bottom: 20px;
+        }
+        .description code {
+            font-weight: bold;
+            color: var(--queue-color);
+        }
+        button {
+            display: block;
+            margin: 0 auto 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #6fa1ff;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .visualization {
+            display: flex;
+            align-items: flex-start;
+            gap: 30px;
+            min-height: 180px;
+        }
+        .queue-area, .pool-area {
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .queue-area {
+            border: 2px dashed var(--queue-color);
+            width: 150px;
+            text-align: center;
+        }
+        .pool-area {
+            border: 2px solid var(--accent-color);
+            flex-grow: 1;
+        }
+        .area-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .task-queue {
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: center;
+        }
+        .thread-pool {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .thread {
+            width: 120px;
+            height: 100px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            transition: background-color 0.5s, border-color 0.5s;
+        }
+        .thread.idle {
+            background-color: rgba(42, 157, 143, 0.2);
+            border: 2px solid var(--idle-color);
+        }
+        .thread.busy {
+            background-color: rgba(231, 111, 81, 0.3);
+            border: 2px solid var(--busy-color);
+        }
+        .thread-name { font-weight: bold; }
+        .thread-status { font-style: italic; font-size: 0.9em; }
+        .task {
+            background-color: var(--task-color);
+            color: var(--bg-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            transition: transform 0.5s, opacity 0.5s;
+        }
+        .log-area {
+            margin-top: 20px;
+            background-color: #111;
+            border-radius: 5px;
+            padding: 15px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            border: 1px solid var(--border-color);
+        }
+        .log-entry {
+            white-space: pre-wrap;
+        }
+
+        /* Timeline styles */
+        .timeline-container {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            background-color: #333;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .timeline-ruler {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            top: 0;
+            left: 0;
+            padding-top: 40px;
+            box-sizing: border-box;
+        }
+        .timeline-ruler span {
+            font-size: 12px;
+            color: #999;
+            transform: translateX(-50%);
+        }
+        .timeline-event {
+            position: absolute;
+            height: 35px;
+            top: 5px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .event-work { background-color: var(--busy-color); }
+        .event-delay { background-color: var(--idle-color); }
+        .event-marker {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 10px;
+            background-color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+<h1>Java ExecutorService Visual Demo 🧑‍💻</h1>
+
+<div class="demo-container">
+    <h2>1. Fixed Thread Pool</h2>
+    <div class="description">
+        A pool with a <b>fixed number of threads</b> (3 in this demo). If all threads are busy, new tasks wait in a queue. It's great for CPU-intensive tasks where you want to limit resource consumption.
+        <br><b>Queue Type:</b> <code>LinkedBlockingQueue</code> - An unbounded queue. Tasks are processed in First-In, First-Out (FIFO) order.
+    </div>
+    <button id="runFixed">Run Demo</button>
+    <div class="visualization">
+        <div class="queue-area">
+            <div class="area-title">Task Queue</div>
+            <div id="fixed-queue" class="task-queue"></div>
+        </div>
+        <div class="pool-area">
+            <div class="area-title">Thread Pool (Size: 3)</div>
+            <div id="fixed-pool" class="thread-pool"></div>
+        </div>
+    </div>
+    <div class="log-area" id="fixed-log"></div>
+</div>
+
+<div class="demo-container">
+    <h2>2. Cached Thread Pool</h2>
+    <div class="description">
+        This pool <b>creates new threads as needed</b> and reuses previously constructed threads when they are available. Threads that are idle for 60 seconds are terminated. Best for many short-lived, asynchronous tasks.
+        <br><b>Queue Type:</b> <code>SynchronousQueue</code> - A queue with zero capacity. It doesn't store tasks; it facilitates a direct "handoff" from the producer to a waiting worker thread. If no thread is available, a new one is created.
+    </div>
+    <button id="runCached">Run Demo</button>
+    <div class="visualization">
+        <div class="queue-area">
+            <div class="area-title">Task Handoff</div>
+            <div id="cached-queue" class="task-queue"></div>
+        </div>
+        <div class="pool-area">
+            <div class="area-title">Thread Pool (Grows)</div>
+            <div id="cached-pool" class="thread-pool"></div>
+        </div>
+    </div>
+    <div class="log-area" id="cached-log"></div>
+</div>
+
+<div class="demo-container">
+    <h2>3. Single Thread Executor</h2>
+    <div class="description">
+        A pool with only <b>one worker thread</b>. It guarantees that tasks execute sequentially in the order they were submitted (FIFO). Perfect for tasks that must not run concurrently.
+        <br><b>Queue Type:</b> <code>LinkedBlockingQueue</code> - Same as the Fixed Thread Pool, an unbounded FIFO queue.
+    </div>
+    <button id="runSingle">Run Demo</button>
+    <div class="visualization">
+        <div class="queue-area">
+            <div class="area-title">Task Queue</div>
+            <div id="single-queue" class="task-queue"></div>
+        </div>
+        <div class="pool-area">
+            <div class="area-title">Thread Pool (Size: 1)</div>
+            <div id="single-pool" class="thread-pool"></div>
+        </div>
+    </div>
+    <div class="log-area" id="single-log"></div>
+</div>
+
+<div class="demo-container">
+    <h2>4. Scheduled Thread Pool: Fixed Rate vs. Fixed Delay</h2>
+    <div class="description">
+        This pool can schedule commands to run after a given delay, or to execute periodically. This visualization focuses on the crucial difference between <code>scheduleAtFixedRate</code> and <code>scheduleWithFixedDelay</code>.
+        <br><b>Task Duration:</b> 1.5 seconds. <b>Period/Delay:</b> 2.5 seconds.
+        <br><b>Queue Type:</b> <code>DelayedWorkQueue</code> - A specialized queue that holds tasks and orders them based on their scheduled execution time.
+    </div>
+    <button id="runScheduled">Run Demo</button>
+
+    <h3 style="margin-top: 30px;">scheduleAtFixedRate</h3>
+    <p>Starts the next task at a fixed interval (2.5s), regardless of when the previous task finished. If a task takes too long, the next one starts immediately after it finishes.</p>
+    <div class="timeline-container" id="rate-timeline-container">
+        <div class="timeline-ruler">
+            <span>0s</span><span>2.5s</span><span>5s</span><span>7.5s</span><span>10s</span><span>12.5s</span>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 30px;">scheduleWithFixedDelay</h3>
+    <p>Starts the next task after a fixed delay (2.5s) <b>after the previous task has completed</b>. The total time between tasks is always (Task Duration + Delay).</p>
+    <div class="timeline-container" id="delay-timeline-container">
+        <div class="timeline-ruler">
+            <span>0s</span><span>2.5s</span><span>5s</span><span>7.5s</span><span>10s</span><span>12.5s</span>
+        </div>
+    </div>
+    <div class="log-area" id="scheduled-log"></div>
+</div>
+
+
+<script>
+    const TASK_DURATION_FIXED = 2500;
+    const TASK_DURATION_CACHED_SINGLE = 1500;
+
+    // --- Helper Functions ---
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    function logMessage(logEl, message) {
+        logEl.innerHTML += `<div class="log-entry">> ${message}</div>`;
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function createThreadElement(id, poolEl) {
+        const thread = document.createElement('div');
+        thread.id = `thread-${id}`;
+        thread.className = 'thread idle';
+        thread.innerHTML = `<div class="thread-name">Thread-${id}</div><div class="thread-status">(idle)</div><div class="task-container"></div>`;
+        poolEl.appendChild(thread);
+        return thread;
+    }
+
+    function createTaskElement(id, text = 'Task') {
+        const task = document.createElement('div');
+        task.id = `task-${id}`;
+        task.className = 'task';
+        task.innerText = `${text} ${id}`;
+        return task;
+    }
+
+    function setThreadState(threadEl, state, taskEl = null) {
+        const statusEl = threadEl.querySelector('.thread-status');
+        const taskContainer = threadEl.querySelector('.task-container');
+
+        if (state === 'busy') {
+            threadEl.classList.remove('idle');
+            threadEl.classList.add('busy');
+            statusEl.innerText = '(running)';
+            if (taskEl) {
+                taskContainer.innerHTML = '';
+                taskContainer.appendChild(taskEl);
+            }
+        } else {
+            threadEl.classList.remove('busy');
+            threadEl.classList.add('idle');
+            statusEl.innerText = '(idle)';
+            taskContainer.innerHTML = '';
+        }
+    }
+
+    function resetDemo(queueEl, poolEl, logEl) {
+        queueEl.innerHTML = '';
+        poolEl.innerHTML = '';
+        logEl.innerHTML = '';
+    }
+
+    // --- Demo 1: Fixed Thread Pool ---
+    const runFixedBtn = document.getElementById('runFixed');
+    const fixedQueueEl = document.getElementById('fixed-queue');
+    const fixedPoolEl = document.getElementById('fixed-pool');
+    const fixedLogEl = document.getElementById('fixed-log');
+
+    runFixedBtn.addEventListener('click', async () => {
+        runFixedBtn.disabled = true;
+        resetDemo(fixedQueueEl, fixedPoolEl, fixedLogEl);
+
+        const numThreads = 3;
+        const numTasks = 6;
+        const threads = [];
+        const taskQueue = [];
+
+        logMessage(fixedLogEl, `Creating a fixed thread pool with ${numThreads} threads.`);
+        for (let i = 1; i <= numThreads; i++) {
+            threads.push(createThreadElement(i, fixedPoolEl));
+        }
+        await sleep(1000);
+
+        logMessage(fixedLogEl, `Submitting ${numTasks} tasks to the pool.`);
+        for (let i = 1; i <= numTasks; i++) {
+            const task = createTaskElement(i);
+            taskQueue.push({ id: i, el: task });
+            fixedQueueEl.appendChild(task);
+            await sleep(200);
+        }
+
+        await sleep(500);
+
+        for (let i = 1; i <= numTasks; i++) {
+            const task = taskQueue.shift();
+
+            // Find an idle thread
+            let idleThread = null;
+            while(idleThread === null) {
+                idleThread = threads.find(t => t.classList.contains('idle'));
+                if (!idleThread) await sleep(100); // Wait for a thread to become free
+            }
+
+            const threadId = idleThread.id.split('-')[1];
+            logMessage(fixedLogEl, `Thread-${threadId} is picking up Task ${task.id} from the queue.`);
+
+            fixedQueueEl.removeChild(task.el);
+            setThreadState(idleThread, 'busy', task.el);
+
+            // Simulate work and then release the thread
+            (async (threadToFree, taskToComplete) => {
+                await sleep(TASK_DURATION_FIXED);
+                logMessage(fixedLogEl, `Task ${taskToComplete.id} completed on Thread-${threadToFree.id.split('-')[1]}.`);
+                setThreadState(threadToFree, 'idle');
+            })(idleThread, task);
+        }
+        runFixedBtn.disabled = false;
+    });
+
+    // --- Demo 2: Cached Thread Pool ---
+    const runCachedBtn = document.getElementById('runCached');
+    const cachedQueueEl = document.getElementById('cached-queue');
+    const cachedPoolEl = document.getElementById('cached-pool');
+    const cachedLogEl = document.getElementById('cached-log');
+
+    runCachedBtn.addEventListener('click', async () => {
+        runCachedBtn.disabled = true;
+        resetDemo(cachedQueueEl, cachedPoolEl, cachedLogEl);
+        let threadCounter = 0;
+
+        logMessage(cachedLogEl, 'Cached pool starts empty. Submitting 4 tasks quickly...');
+        await sleep(1000);
+
+        for (let i = 1; i <= 4; i++) {
+            const task = createTaskElement(i);
+            cachedQueueEl.appendChild(task);
+
+            logMessage(cachedLogEl, `Task ${i} is submitted... searching for an idle thread.`);
+            await sleep(500);
+
+            // In a real cached pool, this is much more complex.
+            // We simulate by creating a new thread for each task.
+            threadCounter++;
+            logMessage(cachedLogEl, `No idle thread found. Creating Thread-${threadCounter} for Task ${i}.`);
+            const thread = createThreadElement(threadCounter, cachedPoolEl);
+
+            await sleep(200);
+
+            cachedQueueEl.removeChild(task);
+            setThreadState(thread, 'busy', task);
+
+            (async (threadToFree, taskToComplete) => {
+                await sleep(TASK_DURATION_CACHED_SINGLE);
+                logMessage(cachedLogEl, `Task ${taskToComplete.id} finished. Thread-${threadToFree.id.split('-')[1]} is now idle and can be reused.`);
+                setThreadState(threadToFree, 'idle');
+            })(thread, {id: i});
+        }
+        runCachedBtn.disabled = false;
+    });
+
+    // --- Demo 3: Single Thread Executor ---
+    const runSingleBtn = document.getElementById('runSingle');
+    const singleQueueEl = document.getElementById('single-queue');
+    const singlePoolEl = document.getElementById('single-pool');
+    const singleLogEl = document.getElementById('single-log');
+
+    runSingleBtn.addEventListener('click', async () => {
+        runSingleBtn.disabled = true;
+        resetDemo(singleQueueEl, singlePoolEl, singleLogEl);
+
+        logMessage(singleLogEl, "Creating a single-threaded executor.");
+        const thread = createThreadElement(1, singlePoolEl);
+        await sleep(1000);
+
+        logMessage(singleLogEl, "Submitting 4 tasks. They will run one by one.");
+        for (let i = 1; i <= 4; i++) {
+            const task = createTaskElement(i);
+            singleQueueEl.appendChild(task);
+            await sleep(200);
+        }
+        await sleep(500);
+
+        for (let i = 1; i <= 4; i++) {
+            const taskEl = document.getElementById(`task-${i}`);
+            logMessage(singleLogEl, `Thread-1 is picking up Task ${i}.`);
+            singleQueueEl.removeChild(taskEl);
+            setThreadState(thread, 'busy', taskEl);
+            await sleep(TASK_DURATION_CACHED_SINGLE);
+            logMessage(singleLogEl, `Task ${i} completed.`);
+            setThreadState(thread, 'idle');
+            await sleep(500);
+        }
+        runSingleBtn.disabled = false;
+    });
+
+    // --- Demo 4: Scheduled Thread Pool ---
+    const runScheduledBtn = document.getElementById('runScheduled');
+    const rateTimelineContainer = document.getElementById('rate-timeline-container');
+    const delayTimelineContainer = document.getElementById('delay-timeline-container');
+    const scheduledLogEl = document.getElementById('scheduled-log');
+
+    runScheduledBtn.addEventListener('click', async () => {
+        runScheduledBtn.disabled = true;
+        rateTimelineContainer.querySelectorAll('.timeline-event, .event-marker').forEach(e => e.remove());
+        delayTimelineContainer.querySelectorAll('.timeline-event, .event-marker').forEach(e => e.remove());
+        scheduledLogEl.innerHTML = '';
+
+        const taskDuration = 1.5; // seconds
+        const period = 2.5; // seconds
+        const totalDuration = 12.5; // seconds
+        const scale = 100 / totalDuration; // percentage per second
+
+        logMessage(scheduledLogEl, `Visualizing with Task Duration = ${taskDuration}s and Period/Delay = ${period}s`);
+
+        // --- Fixed Rate Simulation ---
+        let rateCurrentTime = 0;
+        let rateTaskCount = 0;
+        while (rateCurrentTime < totalDuration) {
+            rateTaskCount++;
+            const taskStartTime = Math.max(rateCurrentTime, (rateTaskCount - 1) * period);
+            if (taskStartTime >= totalDuration) break;
+
+            const workEvent = document.createElement('div');
+            workEvent.className = 'timeline-event event-work';
+            workEvent.innerText = `Work ${rateTaskCount}`;
+            workEvent.style.left = `${taskStartTime * scale}%`;
+            workEvent.style.width = `${taskDuration * scale}%`;
+            rateTimelineContainer.appendChild(workEvent);
+
+            // Add a marker for when the next task is *scheduled* to start
+            const markerTime = rateTaskCount * period;
+            if (markerTime < totalDuration) {
+                const marker = document.createElement('div');
+                marker.className = 'event-marker';
+                marker.style.left = `${markerTime * scale}%`;
+                rateTimelineContainer.appendChild(marker);
+            }
+
+            rateCurrentTime = taskStartTime + taskDuration;
+        }
+        logMessage(scheduledLogEl, '[FixedRate] Next task starts at a fixed interval, even if the last one overran.');
+
+        // --- Fixed Delay Simulation ---
+        let delayCurrentTime = 0;
+        let delayTaskCount = 0;
+        while (delayCurrentTime < totalDuration) {
+            delayTaskCount++;
+            const taskStartTime = delayCurrentTime;
+            if (taskStartTime >= totalDuration) break;
+
+            const workEvent = document.createElement('div');
+            workEvent.className = 'timeline-event event-work';
+            workEvent.innerText = `Work ${delayTaskCount}`;
+            workEvent.style.left = `${taskStartTime * scale}%`;
+            workEvent.style.width = `${taskDuration * scale}%`;
+            delayTimelineContainer.appendChild(workEvent);
+
+            const taskEndTime = taskStartTime + taskDuration;
+            if (taskEndTime >= totalDuration) break;
+
+            const delayEvent = document.createElement('div');
+            delayEvent.className = 'timeline-event event-delay';
+            delayEvent.innerText = `Delay (${period}s)`;
+            delayEvent.style.left = `${taskEndTime * scale}%`;
+            delayEvent.style.width = `${period * scale}%`;
+            delayTimelineContainer.appendChild(delayEvent);
+
+            delayCurrentTime = taskEndTime + period;
+        }
+        logMessage(scheduledLogEl, '[FixedDelay] A fixed delay is added *after* the previous task completes.');
+
+        runScheduledBtn.disabled = false;
+    });
+</script>
+</body>
+</html>

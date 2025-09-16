@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete ExecutorService Thread Pool Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+
+        .content {
+            padding: 25px;
+        }
+
+        .pool-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .pool-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(78,205,196,0.3);
+        }
+
+        .pool-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78,205,196,0.4);
+        }
+
+        .pool-btn.active {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+        }
+
+        .pool-demo {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 3px solid #dee2e6;
+        }
+
+        .pool-demo.active {
+            display: block;
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pool-info {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196f3;
+        }
+
+        .queue-info {
+            background: linear-gradient(135deg, #fff3e0, #ffcc02);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .visualization {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+            align-items: start;
+        }
+
+        .task-queue, .thread-pool, .completed-tasks {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            min-height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            padding: 8px;
+            border-radius: 5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .task-queue .section-title {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            color: white;
+        }
+
+        .thread-pool .section-title {
+            background: linear-gradient(45deg, #4caf50, #388e3c);
+            color: white;
+        }
+
+        .completed-tasks .section-title {
+            background: linear-gradient(45deg, #2196f3, #1976d2);
+            color: white;
+        }
+
+        .queue-container {
+            min-height: 250px;
+            position: relative;
+        }
+
+        .task {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            color: white;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(255,152,0,0.3);
+            transform: translateX(-100px);
+            opacity: 0;
+            transition: all 1.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+            position: relative;
+        }
+
+        .task.queued {
+            transform: translateX(0);
+            opacity: 1;
+            animation: slideInSlow 1.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .task.processing {
+            transform: translateX(100px);
+            opacity: 0.7;
+            background: linear-gradient(45deg, #2196f3, #1976d2);
+            animation: moveToThread 2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        @keyframes slideInSlow {
+            0% {
+                transform: translateX(-150px) scale(0.8);
+                opacity: 0;
+            }
+            50% {
+                transform: translateX(-10px) scale(1.05);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateX(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes moveToThread {
+            0% {
+                transform: translateX(0) scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: translateX(50px) scale(0.9);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateX(100px) scale(0.8);
+                opacity: 0;
+            }
+        }
+
+        .thread {
+            background: linear-gradient(45deg, #4caf50, #388e3c);
+            color: white;
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: center;
+            position: relative;
+            transition: all 1s ease-in-out;
+            box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .thread.busy {
+            background: linear-gradient(45deg, #ff5722, #d84315);
+            box-shadow: 0 6px 20px rgba(255,87,34,0.4);
+            transform: scale(1.05);
+            animation: processingPulse 3s infinite ease-in-out;
+        }
+
+        @keyframes processingPulse {
+            0%, 100% {
+                transform: scale(1.05);
+                box-shadow: 0 6px 20px rgba(255,87,34,0.4);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 8px 25px rgba(255,87,34,0.6);
+            }
+        }
+
+        .thread.completing {
+            background: linear-gradient(45deg, #2196f3, #1976d2);
+            animation: completionGlow 1.5s ease-out;
+        }
+
+        @keyframes completionGlow {
+            0% {
+                background: linear-gradient(45deg, #ff5722, #d84315);
+                transform: scale(1.05);
+            }
+            50% {
+                background: linear-gradient(45deg, #ffeb3b, #ffc107);
+                transform: scale(1.1);
+            }
+            100% {
+                background: linear-gradient(45deg, #2196f3, #1976d2);
+                transform: scale(1);
+            }
+        }
+
+        .completed-task {
+            background: linear-gradient(45deg, #2196f3, #1976d2);
+            color: white;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(33,150,243,0.3);
+            transform: translateX(100px);
+            opacity: 0;
+            animation: slideInComplete 1.8s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+        }
+
+        @keyframes slideInComplete {
+            0% {
+                transform: translateX(150px) scale(0.8);
+                opacity: 0;
+            }
+            60% {
+                transform: translateX(-10px) scale(1.1);
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateX(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .controls {
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 0 10px;
+            transition: all 0.4s ease;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .code-section {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+
+        .explanation {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #4caf50;
+            margin: 20px 0;
+        }
+
+        .speed-control {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+        }
+
+        .speed-slider {
+            width: 200px;
+            margin: 0 10px;
+        }
+
+        /* Scheduler specific styles */
+        .scheduler-demo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .scheduler-type {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 3px solid #dee2e6;
+        }
+
+        .fixed-rate {
+            border-color: #ff6b6b;
+        }
+
+        .fixed-delay {
+            border-color: #4ecdc4;
+        }
+
+        .timeline {
+            height: 100px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            position: relative;
+            margin: 15px 0;
+            border: 2px solid #dee2e6;
+            overflow: hidden;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #6c757d;
+            opacity: 0.5;
+        }
+
+        .timeline-marker::after {
+            content: attr(data-time);
+            position: absolute;
+            bottom: 5px;
+            left: -15px;
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        .execution-block {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            opacity: 0;
+            animation: slideInExecution 2s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        @keyframes slideInExecution {
+            0% {
+                opacity: 0;
+                transform: translateY(-50%) scale(0.5) rotateX(90deg);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translateY(-50%) scale(1.1) rotateX(0deg);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(-50%) scale(1) rotateX(0deg);
+            }
+        }
+
+        .fixed-rate .execution-block {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+
+        .fixed-delay .execution-block {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+
+        .stats {
+            background: linear-gradient(135deg, #e9ecef, #dee2e6);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.95rem;
+            border: 1px solid #adb5bd;
+        }
+
+        @media (max-width: 768px) {
+            .visualization {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .scheduler-demo {
+                grid-template-columns: 1fr;
+            }
+
+            .pool-selector {
+                gap: 5px;
+            }
+
+            .pool-btn {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🏊‍♂️ Complete ExecutorService Thread Pool Demo</h1>
+        <p>Comprehensive visualization of all Java thread pools with queue types and scheduling</p>
+    </div>
+
+    <div class="content">
+        <div class="speed-control">
+            <label>⚡ Animation Speed: </label>
+            <input type="range" id="speedSlider" class="speed-slider" min="0.5" max="3" step="0.5" value="1">
+            <span id="speedDisplay">1x</span>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                Adjust the speed to better observe task movements and thread processing
+            </p>
+        </div>
+
+        <div class="pool-selector">
+            <button class="pool-btn active" onclick="showPool('fixed')">Fixed Thread Pool</button>
+            <button class="pool-btn" onclick="showPool('cached')">Cached Thread Pool</button>
+            <button class="pool-btn" onclick="showPool('single')">Single Thread Executor</button>
+            <button class="pool-btn" onclick="showPool('scheduled')">Scheduled Thread Pool</button>
+        </div>
+
+        <!-- Fixed Thread Pool Demo -->
+        <div id="fixed-pool" class="pool-demo active">
+            <div class="pool-info">
+                <h3>🔢 Fixed Thread Pool (3 threads)</h3>
+                <p><strong>Characteristics:</strong></p>
+                <ul>
+                    <li>Fixed number of threads (reusable)</li>
+                    <li>Good for CPU-intensive tasks with predictable load</li>
+                    <li>Bounded resource usage</li>
+                </ul>
+                <div class="queue-info">
+                    <strong>🗃️ Queue Type:</strong> LinkedBlockingQueue (Unbounded) - Can hold unlimited tasks waiting for execution [web:81][web:89]
+                </div>
+            </div>
+
+            <div class="visualization">
+                <div class="task-queue">
+                    <div class="section-title">📋 Task Queue</div>
+                    <div class="queue-container" id="fixed-queue"></div>
+                </div>
+                <div class="thread-pool">
+                    <div class="section-title">🧵 Thread Pool (3)</div>
+                    <div id="fixed-threads">
+                        <div class="thread">Thread-1 (Idle)</div>
+                        <div class="thread">Thread-2 (Idle)</div>
+                        <div class="thread">Thread-3 (Idle)</div>
+                    </div>
+                </div>
+                <div class="completed-tasks">
+                    <div class="section-title">✅ Completed</div>
+                    <div class="queue-container" id="fixed-completed"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="startFixedDemo()">▶️ Start Demo</button>
+                <button class="btn" onclick="resetFixedDemo()">🔄 Reset</button>
+            </div>
+
+            <div class="code-section">
+<pre><code>ExecutorService fixedPool = Executors.newFixedThreadPool(3);
+// Uses: new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS,
+//                              new LinkedBlockingQueue&lt;Runnable&gt;())
+
+for (int i = 1; i <= 6; i++) {
+    final int taskId = i;
+    fixedPool.submit(() -> {
+        System.out.println("Task " + taskId + " on: " + Thread.currentThread().getName());
+        Thread.sleep(4000); // Simulate work (4 seconds)
+    });
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Cached Thread Pool Demo -->
+        <div id="cached-pool" class="pool-demo">
+            <div class="pool-info">
+                <h3>💨 Cached Thread Pool</h3>
+                <p><strong>Characteristics:</strong></p>
+                <ul>
+                    <li>Creates new threads as needed (up to Integer.MAX_VALUE)</li>
+                    <li>Reuses idle threads (60s timeout)</li>
+                    <li>Good for short-lived async tasks</li>
+                    <li>Can potentially create too many threads if overloaded</li>
+                </ul>
+                <div class="queue-info">
+                    <strong>🗃️ Queue Type:</strong> SynchronousQueue - Direct handoff (capacity = 0). Tasks are directly passed to threads [web:81][web:85]
+                </div>
+            </div>
+
+            <div class="visualization">
+                <div class="task-queue">
+                    <div class="section-title">📋 Task Queue</div>
+                    <div class="queue-container" id="cached-queue">
+                        <div style="text-align:center; color:#666; padding: 20px;">
+                            <strong>SynchronousQueue</strong><br>
+                            (Direct Handoff - No Queueing)<br>
+                            Tasks create new threads immediately
+                        </div>
+                    </div>
+                </div>
+                <div class="thread-pool">
+                    <div class="section-title">🧵 Dynamic Thread Pool</div>
+                    <div id="cached-threads">
+                        <div style="text-align:center; color:#666; font-style: italic; padding: 10px;">
+                            Threads created on demand...
+                        </div>
+                    </div>
+                </div>
+                <div class="completed-tasks">
+                    <div class="section-title">✅ Completed</div>
+                    <div class="queue-container" id="cached-completed"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="startCachedDemo()">▶️ Start Demo</button>
+                <button class="btn" onclick="resetCachedDemo()">🔄 Reset</button>
+            </div>
+
+            <div class="code-section">
+<pre><code>ExecutorService cachedPool = Executors.newCachedThreadPool();
+// Uses: new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+//                              new SynchronousQueue&lt;Runnable&gt;())
+
+for (int i = 1; i <= 4; i++) {
+    final int taskId = i;
+    cachedPool.submit(() -> {
+        System.out.println("Task " + taskId + " on: " + Thread.currentThread().getName());
+        Thread.sleep(2000); // Short work duration
+    });
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Single Thread Executor Demo -->
+        <div id="single-pool" class="pool-demo">
+            <div class="pool-info">
+                <h3>1️⃣ Single Thread Executor</h3>
+                <p><strong>Characteristics:</strong></p>
+                <ul>
+                    <li>Only one thread executes tasks</li>
+                    <li>Tasks execute sequentially (FIFO - First In, First Out)</li>
+                    <li>Good for sequential processing and maintaining order</li>
+                    <li>Thread is replaced if it dies due to failure</li>
+                </ul>
+                <div class="queue-info">
+                    <strong>🗃️ Queue Type:</strong> LinkedBlockingQueue (Unbounded) - Sequential execution guaranteed, tasks wait in order [web:88][web:89]
+                </div>
+            </div>
+
+            <div class="visualization">
+                <div class="task-queue">
+                    <div class="section-title">📋 Task Queue (FIFO)</div>
+                    <div class="queue-container" id="single-queue"></div>
+                </div>
+                <div class="thread-pool">
+                    <div class="section-title">🧵 Single Thread</div>
+                    <div id="single-threads">
+                        <div class="thread">Thread-1 (Idle)</div>
+                    </div>
+                </div>
+                <div class="completed-tasks">
+                    <div class="section-title">✅ Completed (In Order)</div>
+                    <div class="queue-container" id="single-completed"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="startSingleDemo()">▶️ Start Demo</button>
+                <button class="btn" onclick="resetSingleDemo()">🔄 Reset</button>
+            </div>
+
+            <div class="code-section">
+<pre><code>ExecutorService singlePool = Executors.newSingleThreadExecutor();
+// Uses: new FinalizableDelegatedExecutorService
+//       (new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+//                               new LinkedBlockingQueue&lt;Runnable&gt;()))
+
+for (int i = 1; i <= 5; i++) {
+    final int taskId = i;
+    singlePool.submit(() -> {
+        System.out.println("Task " + taskId + " on: " + Thread.currentThread().getName());
+        Thread.sleep(2500); // Sequential work - one at a time
+    });
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Scheduled Thread Pool Demo -->
+        <div id="scheduled-pool" class="pool-demo">
+            <div class="pool-info">
+                <h3>⏰ Scheduled Thread Pool</h3>
+                <p><strong>Characteristics:</strong></p>
+                <ul>
+                    <li>Schedules tasks for future execution</li>
+                    <li>Supports delays and periodic execution</li>
+                    <li>Good for recurring tasks and timers</li>
+                    <li>Can schedule both one-time and repeating tasks</li>
+                </ul>
+                <div class="queue-info">
+                    <strong>🗃️ Queue Type:</strong> DelayedWorkQueue - Priority queue for scheduled tasks with timing constraints [web:44][web:84]
+                </div>
+            </div>
+
+            <div class="scheduler-demo">
+                <div class="scheduler-type fixed-rate">
+                    <h4>🔴 Fixed Rate (scheduleAtFixedRate)</h4>
+                    <p><strong>Executes every N milliseconds from START time</strong></p>
+                    <div class="timeline" id="fixed-rate-timeline"></div>
+                    <div class="stats" id="fixed-rate-stats">
+                        Execution Interval: 3000ms<br>
+                        Task Duration: 4000ms<br>
+                        <strong>Note:</strong> Next execution starts immediately after current finishes if delayed
+                    </div>
+                </div>
+
+                <div class="scheduler-type fixed-delay">
+                    <h4>🟢 Fixed Delay (scheduleWithFixedDelay)</h4>
+                    <p><strong>Waits N milliseconds AFTER each completion</strong></p>
+                    <div class="timeline" id="fixed-delay-timeline"></div>
+                    <div class="stats" id="fixed-delay-stats">
+                        Delay After Completion: 3000ms<br>
+                        Task Duration: 4000ms<br>
+                        <strong>Total cycle:</strong> 7000ms (4000ms execution + 3000ms delay)
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="startScheduledDemo()">▶️ Start Scheduler Demo</button>
+                <button class="btn" onclick="resetScheduledDemo()">🔄 Reset</button>
+            </div>
+
+            <div class="code-section">
+<pre><code>ScheduledExecutorService scheduledPool = Executors.newScheduledThreadPool(2);
+
+// Fixed Rate: Tries to execute every 3 seconds
+scheduledPool.scheduleAtFixedRate(() -> {
+    System.out.println("Fixed Rate - Start: " + System.currentTimeMillis());
+    Thread.sleep(4000); // Task takes 4 seconds (longer than interval!)
+    System.out.println("Fixed Rate - End: " + System.currentTimeMillis());
+}, 0, 3, TimeUnit.SECONDS);
+
+// Fixed Delay: Waits 3 seconds AFTER each completion
+scheduledPool.scheduleWithFixedDelay(() -> {
+    System.out.println("Fixed Delay - Start: " + System.currentTimeMillis());
+    Thread.sleep(4000); // Task takes 4 seconds
+    System.out.println("Fixed Delay - End: " + System.currentTimeMillis());
+}, 0, 3, TimeUnit.SECONDS);</code></pre>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h3>🎯 Complete ExecutorService Summary</h3>
+            <ul>
+                <li><strong>Fixed Thread Pool:</strong> Bounded threads, unbounded queue - predictable resource usage [web:81][web:89]</li>
+                <li><strong>Cached Thread Pool:</strong> Unbounded threads, direct handoff - adapts to load but can overwhelm system [web:81][web:85]</li>
+                <li><strong>Single Thread Executor:</strong> One thread, sequential execution - maintains order and thread safety [web:88][web:89]</li>
+                <li><strong>Scheduled Thread Pool:</strong> Time-based execution with Fixed Rate vs Fixed Delay scheduling [web:44][web:89]</li>
+                <li><strong>Queue Types:</strong> Different implementations optimize for different use cases and performance characteristics [web:81][web:84]</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPool = 'fixed';
+    let demoRunning = false;
+    let animationSpeed = 1;
+
+    // Slower animation speeds for better understanding
+    const BASE_TASK_PROCESSING_TIME = 4000; // 4 seconds base
+    const BASE_TASK_CREATION_INTERVAL = 2500; // 2.5 seconds base
+    const BASE_SCHEDULER_INTERVAL = 3000; // 3 seconds base
+    const BASE_TASK_DURATION = 4000; // 4 seconds base
+
+    // Speed control
+    document.getElementById('speedSlider').addEventListener('input', function() {
+        animationSpeed = parseFloat(this.value);
+        document.getElementById('speedDisplay').textContent = animationSpeed + 'x';
+    });
+
+    function getAdjustedTime(baseTime) {
+        return Math.max(500, baseTime / animationSpeed);
+    }
+
+    function showPool(poolType) {
+        document.querySelectorAll('.pool-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.pool-demo').forEach(demo => demo.classList.remove('active'));
+        document.getElementById(poolType + '-pool').classList.add('active');
+
+        currentPool = poolType;
+        demoRunning = false;
+    }
+
+    // Fixed Thread Pool Demo
+    let fixedTaskId = 0;
+    function startFixedDemo() {
+        if (demoRunning) return;
+        demoRunning = true;
+        fixedTaskId = 0;
+
+        resetFixedDemo();
+
+        for (let i = 1; i <= 6; i++) {
+            setTimeout(() => addTaskToFixed(i), getAdjustedTime((i-1) * BASE_TASK_CREATION_INTERVAL));
+        }
+    }
+
+    function addTaskToFixed(taskId) {
+        const queue = document.getElementById('fixed-queue');
+        const task = document.createElement('div');
+        task.className = 'task';
+        task.textContent = `Task ${taskId}`;
+        task.id = `fixed-task-${taskId}`;
+        queue.appendChild(task);
+
+        setTimeout(() => {
+            task.classList.add('queued');
+        }, 100);
+
+        setTimeout(() => processFixedTask(taskId), getAdjustedTime(1000));
+    }
+
+    function processFixedTask(taskId) {
+        const task = document.getElementById(`fixed-task-${taskId}`);
+        if (!task) return;
+
+        const threads = document.querySelectorAll('#fixed-threads .thread');
+        let availableThread = null;
+
+        for (let thread of threads) {
+            if (!thread.classList.contains('busy')) {
+                availableThread = thread;
+                break;
+            }
+        }
+
+        if (availableThread) {
+            task.classList.add('processing');
+            availableThread.textContent = `Processing Task ${taskId}`;
+            availableThread.classList.add('busy');
+
+            setTimeout(() => {
+                task.remove();
+            }, getAdjustedTime(1000));
+
+            setTimeout(() => {
+                availableThread.classList.add('completing');
+                availableThread.textContent = `Completing Task ${taskId}`;
+
+                setTimeout(() => {
+                    const completed = document.getElementById('fixed-completed');
+                    const completedTask = document.createElement('div');
+                    completedTask.className = 'completed-task';
+                    completedTask.textContent = `Task ${taskId} ✓`;
+                    completed.appendChild(completedTask);
+
+                    availableThread.classList.remove('busy', 'completing');
+                    const threadIndex = Array.from(threads).indexOf(availableThread) + 1;
+                    availableThread.textContent = `Thread-${threadIndex} (Idle)`;
+
+                }, getAdjustedTime(800));
+
+            }, getAdjustedTime(BASE_TASK_PROCESSING_TIME));
+        } else {
+            setTimeout(() => processFixedTask(taskId), getAdjustedTime(1000));
+        }
+    }
+
+    function resetFixedDemo() {
+        document.getElementById('fixed-queue').innerHTML = '';
+        document.getElementById('fixed-completed').innerHTML = '';
+
+        const threads = document.querySelectorAll('#fixed-threads .thread');
+        threads.forEach((thread, index) => {
+            thread.className = 'thread';
+            thread.textContent = `Thread-${index + 1} (Idle)`;
+        });
+
+        demoRunning = false;
+    }
+
+    // Cached Thread Pool Demo
+    function startCachedDemo() {
+        if (demoRunning) return;
+        demoRunning = true;
+
+        resetCachedDemo();
+
+        // Create 4 tasks quickly - each gets its own thread due to SynchronousQueue
+        for (let i = 1; i <= 4; i++) {
+            setTimeout(() => addTaskToCached(i), getAdjustedTime((i-1) * 800));
+        }
+    }
+
+    function addTaskToCached(taskId) {
+        // With SynchronousQueue, tasks don't queue - they create new threads immediately
+        const threadPool = document.getElementById('cached-threads');
+
+        // Create new thread immediately (simulating direct handoff)
+        const thread = document.createElement('div');
+        thread.className = 'thread busy';
+        thread.textContent = `Thread-${taskId} Processing Task ${taskId}`;
+        thread.id = `cached-thread-${taskId}`;
+        threadPool.appendChild(thread);
+
+        // Complete task after processing time
+        setTimeout(() => {
+            thread.classList.remove('busy');
+            thread.classList.add('completing');
+            thread.textContent = `Thread-${taskId} Completing Task ${taskId}`;
+
+            setTimeout(() => {
+                thread.textContent = `Thread-${taskId} (Idle - 60s timeout)`;
+                thread.classList.remove('completing');
+
+                // Move to completed
+                const completed = document.getElementById('cached-completed');
+                const completedTask = document.createElement('div');
+                completedTask.className = 'completed-task';
+                completedTask.textContent = `Task ${taskId} ✓`;
+                completed.appendChild(completedTask);
+
+            }, getAdjustedTime(800));
+
+        }, getAdjustedTime(2000)); // Shorter processing time for cached pool
+    }
+
+    function resetCachedDemo() {
+        document.getElementById('cached-completed').innerHTML = '';
+        document.getElementById('cached-threads').innerHTML = `
+                <div style="text-align:center; color:#666; font-style: italic; padding: 10px;">
+                    Threads created on demand...
+                </div>
+            `;
+        demoRunning = false;
+    }
+
+    // Single Thread Executor Demo
+    let singleTaskQueue = [];
+    function startSingleDemo() {
+        if (demoRunning) return;
+        demoRunning = true;
+
+        resetSingleDemo();
+        singleTaskQueue = [];
+
+        // Add 5 tasks to queue first
+        for (let i = 1; i <= 5; i++) {
+            setTimeout(() => addTaskToSingle(i), getAdjustedTime((i-1) * 800));
+        }
+
+        // Start processing after all tasks are queued
+        setTimeout(() => processSingleTasks(), getAdjustedTime(4000));
+    }
+
+    function addTaskToSingle(taskId) {
+        const queue = document.getElementById('single-queue');
+        const task = document.createElement('div');
+        task.className = 'task';
+        task.textContent = `Task ${taskId}`;
+        task.id = `single-task-${taskId}`;
+        queue.appendChild(task);
+
+        setTimeout(() => {
+            task.classList.add('queued');
+        }, 100);
+
+        singleTaskQueue.push(taskId);
+    }
+
+    function processSingleTasks() {
+        if (singleTaskQueue.length === 0) {
+            demoRunning = false;
+            return;
+        }
+
+        const taskId = singleTaskQueue.shift();
+        const task = document.getElementById(`single-task-${taskId}`);
+        const thread = document.querySelector('#single-threads .thread');
+
+        if (task) {
+            // Move task to thread
+            task.classList.add('processing');
+            thread.textContent = `Processing Task ${taskId}`;
+            thread.classList.add('busy');
+
+            setTimeout(() => {
+                task.remove();
+            }, getAdjustedTime(1000));
+
+            // Complete task
+            setTimeout(() => {
+                thread.classList.add('completing');
+                thread.textContent = `Completing Task ${taskId}`;
+
+                setTimeout(() => {
+                    thread.classList.remove('busy', 'completing');
+                    thread.textContent = `Thread-1 (Idle)`;
+
+                    // Move to completed
+                    const completed = document.getElementById('single-completed');
+                    const completedTask = document.createElement('div');
+                    completedTask.className = 'completed-task';
+                    completedTask.textContent = `Task ${taskId} ✓`;
+                    completed.appendChild(completedTask);
+
+                    // Process next task after short delay
+                    setTimeout(() => processSingleTasks(), getAdjustedTime(500));
+
+                }, getAdjustedTime(800));
+
+            }, getAdjustedTime(2500)); // Processing time for single thread
+        }
+    }
+
+    function resetSingleDemo() {
+        document.getElementById('single-queue').innerHTML = '';
+        document.getElementById('single-completed').innerHTML = '';
+        singleTaskQueue = [];
+
+        const thread = document.querySelector('#single-threads .thread');
+        thread.className = 'thread';
+        thread.textContent = 'Thread-1 (Idle)';
+
+        demoRunning = false;
+    }
+
+    // Scheduled Thread Pool Demo
+    let rateExecution = 0;
+    let delayExecution = 0;
+
+    function startScheduledDemo() {
+        if (demoRunning) return;
+        demoRunning = true;
+
+        resetScheduledDemo();
+        rateExecution = 0;
+        delayExecution = 0;
+
+        startFixedRateDemo();
+        setTimeout(() => startFixedDelayDemo(), getAdjustedTime(500));
+    }
+
+    function startFixedRateDemo() {
+        const timeline = document.getElementById('fixed-rate-timeline');
+        let startTime = Date.now();
+
+        function executeFixedRate() {
+            rateExecution++;
+            const currentTime = Date.now() - startTime;
+
+            const block = document.createElement('div');
+            block.className = 'execution-block';
+            block.textContent = `Exec #${rateExecution}`;
+            block.style.left = `${(currentTime / 20000) * 100}%`;
+            block.style.width = `${(getAdjustedTime(BASE_TASK_DURATION) / 20000) * 100}%`;
+            block.style.animationDuration = `${getAdjustedTime(2000) / 1000}s`;
+            timeline.appendChild(block);
+
+            document.getElementById('fixed-rate-stats').innerHTML = `
+                    Execution #${rateExecution}<br>
+                    Started at: ${Math.round(currentTime)}ms<br>
+                    Will run for: ${getAdjustedTime(BASE_TASK_DURATION)}ms<br>
+                    Next scheduled: ${Math.round(currentTime + getAdjustedTime(BASE_SCHEDULER_INTERVAL))}ms
+                `;
+
+            if (rateExecution < 4) {
+                setTimeout(executeFixedRate, getAdjustedTime(BASE_SCHEDULER_INTERVAL));
+            }
+        }
+
+        executeFixedRate();
+    }
+
+    function startFixedDelayDemo() {
+        const timeline = document.getElementById('fixed-delay-timeline');
+        let startTime = Date.now();
+
+        function executeFixedDelay() {
+            delayExecution++;
+            const currentTime = Date.now() - startTime;
+
+            const block = document.createElement('div');
+            block.className = 'execution-block';
+            block.textContent = `Exec #${delayExecution}`;
+            block.style.left = `${(currentTime / 20000) * 100}%`;
+            block.style.width = `${(getAdjustedTime(BASE_TASK_DURATION) / 20000) * 100}%`;
+            block.style.animationDuration = `${getAdjustedTime(2000) / 1000}s`;
+            timeline.appendChild(block);
+
+            const totalCycle = getAdjustedTime(BASE_TASK_DURATION + BASE_SCHEDULER_INTERVAL);
+            document.getElementById('fixed-delay-stats').innerHTML = `
+                    Execution #${delayExecution}<br>
+                    Started at: ${Math.round(currentTime)}ms<br>
+                    Will run for: ${getAdjustedTime(BASE_TASK_DURATION)}ms<br>
+                    Next scheduled: ${Math.round(currentTime + totalCycle)}ms
+                `;
+
+            if (delayExecution < 3) {
+                setTimeout(executeFixedDelay, totalCycle);
+            }
+        }
+
+        executeFixedDelay();
+    }
+
+    function resetScheduledDemo() {
+        document.getElementById('fixed-rate-timeline').innerHTML = '';
+        document.getElementById('fixed-delay-timeline').innerHTML = '';
+
+        ['fixed-rate-timeline', 'fixed-delay-timeline'].forEach(id => {
+            const timeline = document.getElementById(id);
+            for (let i = 0; i <= 20; i += 4) {
+                const marker = document.createElement('div');
+                marker.className = 'timeline-marker';
+                marker.style.left = `${(i / 20) * 100}%`;
+                marker.setAttribute('data-time', `${i}s`);
+                timeline.appendChild(marker);
+            }
+        });
+
+        document.getElementById('fixed-rate-stats').innerHTML = 'Ready to start...';
+        document.getElementById('fixed-delay-stats').innerHTML = 'Ready to start...';
+
+        demoRunning = false;
+    }
+
+    // Initialize all demos
+    resetFixedDemo();
+    resetCachedDemo();
+    resetSingleDemo();
+    resetScheduledDemo();
+</script>
+</body>
+</html>

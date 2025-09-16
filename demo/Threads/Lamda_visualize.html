@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lambda vs Anonymous Class Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .demo-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .demo-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(78,205,196,0.3);
+        }
+
+        .demo-btn.active {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .demo-section {
+            display: none;
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        .demo-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .code-panel {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            border: 3px solid;
+        }
+
+        .anonymous-panel {
+            border-color: #ff6b6b;
+        }
+
+        .lambda-panel {
+            border-color: #4ecdc4;
+        }
+
+        .panel-header {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .anonymous-panel .panel-header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .lambda-panel .panel-header {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .code-content {
+            background: #1a202c;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .keyword { color: #63b3ed; }
+        .type { color: #68d391; }
+        .string { color: #fbb6ce; }
+        .comment { color: #a0aec0; font-style: italic; }
+        .method { color: #fbd38d; }
+
+        .execution-area {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #e2e8f0;
+        }
+
+        .thread-visualization {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .thread-box {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 200px;
+            margin: 10px;
+            font-weight: bold;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.5s ease;
+        }
+
+        .thread-box.active {
+            opacity: 1;
+            transform: scale(1);
+            animation: threadPulse 2s infinite;
+        }
+
+        @keyframes threadPulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
+            50% { box-shadow: 0 8px 25px rgba(102,126,234,0.8); }
+        }
+
+        .output-console {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            min-height: 100px;
+            border: 2px solid #4a5568;
+        }
+
+        .console-line {
+            margin: 5px 0;
+            animation: typeIn 0.8s ease-out;
+        }
+
+        @keyframes typeIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .comparison-table {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+        }
+
+        .comparison-table .pros {
+            color: #38a169;
+            font-weight: bold;
+        }
+
+        .comparison-table .cons {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+
+        .inline-demo {
+            background: linear-gradient(135deg, #fff5f5, #fed7d7);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #fc8181;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            .thread-visualization {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚀 Lambda vs Anonymous Class Demo</h1>
+        <p>Interactive comparison of Runnable implementations in Java</p>
+    </div>
+
+    <div class="content">
+        <div class="demo-selector">
+            <button class="demo-btn active" onclick="showDemo('basic')">Basic Comparison</button>
+            <button class="demo-btn" onclick="showDemo('execution')">Live Execution</button>
+            <button class="demo-btn" onclick="showDemo('inline')">Inline Side-by-Side</button>
+            <button class="demo-btn" onclick="showDemo('differences')">Key Differences</button>
+        </div>
+
+        <!-- Basic Comparison Demo -->
+        <div id="basic-demo" class="demo-section active">
+            <h2>📋 Anonymous Class vs Lambda Expression</h2>
+            <div class="comparison-grid">
+                <div class="code-panel anonymous-panel">
+                    <div class="panel-header">❌ Anonymous Class (Verbose)</div>
+                    <div class="code-content">
+<pre><span class="comment">// 1. Anonymous Class - 5+ lines</span>
+<span class="type">Runnable</span> <span class="method">anonymousTask</span> = <span class="keyword">new</span> <span class="type">Runnable</span>() {
+    <span class="keyword">@Override</span>
+    <span class="keyword">public void</span> <span class="method">run</span>() {
+        <span class="type">System</span>.<span class="method">out</span>.<span class="method">println</span>(<span class="string">"Anonymous class running on: "</span>
+            + <span class="type">Thread</span>.<span class="method">currentThread</span>().<span class="method">getName</span>());
+    }
+};
+
+<span class="type">Thread</span> thread1 = <span class="keyword">new</span> <span class="type">Thread</span>(anonymousTask);
+thread1.<span class="method">start</span>();</pre>
+                    </div>
+                </div>
+
+                <div class="code-panel lambda-panel">
+                    <div class="panel-header">✅ Lambda Expression (Concise)</div>
+                    <div class="code-content">
+<pre><span class="comment">// 2. Lambda Expression - 1 line possible</span>
+<span class="type">Runnable</span> <span class="method">lambdaTask</span> = () -> {
+    <span class="type">System</span>.<span class="method">out</span>.<span class="method">println</span>(<span class="string">"Lambda running on: "</span>
+        + <span class="type">Thread</span>.<span class="method">currentThread</span>().<span class="method">getName</span>());
+};
+
+<span class="type">Thread</span> thread2 = <span class="keyword">new</span> <span class="type">Thread</span>(lambdaTask);
+thread2.<span class="method">start</span>();</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="runBasicDemo()">▶️ Run Both Examples</button>
+                <button class="btn" onclick="clearOutput()">🧹 Clear Output</button>
+            </div>
+
+            <div class="execution-area">
+                <h3>🖥️ Execution Output:</h3>
+                <div class="output-console" id="basic-output">
+                    Click "Run Both Examples" to see the execution...
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Execution Demo -->
+        <div id="execution-demo" class="demo-section">
+            <h2>⚡ Live Thread Execution Visualization</h2>
+
+            <div class="thread-visualization">
+                <div class="thread-box" id="thread1">
+                    <div>Thread-1</div>
+                    <div>Anonymous Class</div>
+                    <div id="thread1-status">Ready</div>
+                </div>
+                <div class="thread-box" id="thread2">
+                    <div>Thread-2</div>
+                    <div>Lambda Expression</div>
+                    <div id="thread2-status">Ready</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="runThreadDemo()">🚀 Start Threads</button>
+                <button class="btn" onclick="resetThreads()">🔄 Reset</button>
+            </div>
+
+            <div class="execution-area">
+                <h3>📊 Thread Execution Log:</h3>
+                <div class="output-console" id="thread-output">
+                    Ready to start thread execution demo...
+                </div>
+            </div>
+        </div>
+
+        <!-- Inline Comparison Demo -->
+        <div id="inline-demo" class="demo-section">
+            <h2>🔀 Inline Side-by-Side Comparison</h2>
+
+            <div class="inline-demo">
+                <h3>💡 Real-world Usage Comparison</h3>
+                <p>See how both approaches look when used directly in Thread constructor:</p>
+            </div>
+
+            <div class="comparison-grid">
+                <div class="code-panel anonymous-panel">
+                    <div class="panel-header">Anonymous Class - 5 lines</div>
+                    <div class="code-content">
+<pre><span class="keyword">new</span> <span class="type">Thread</span>(<span class="keyword">new</span> <span class="type">Runnable</span>() {
+    <span class="keyword">@Override</span>
+    <span class="keyword">public void</span> <span class="method">run</span>() {
+        <span class="type">System</span>.<span class="method">out</span>.<span class="method">println</span>(<span class="string">"Anonymous: Hello World!"</span>);
+    }
+}).<span class="method">start</span>();</pre>
+                    </div>
+                </div>
+
+                <div class="code-panel lambda-panel">
+                    <div class="panel-header">Lambda Expression - 1 line</div>
+                    <div class="code-content">
+<pre><span class="keyword">new</span> <span class="type">Thread</span>(() ->
+    <span class="type">System</span>.<span class="method">out</span>.<span class="method">println</span>(<span class="string">"Lambda: Hello World!"</span>)
+).<span class="method">start</span>();</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="runInlineDemo()">⚡ Execute Inline Examples</button>
+            </div>
+
+            <div class="execution-area">
+                <h3>🎯 Output Comparison:</h3>
+                <div class="output-console" id="inline-output">
+                    Execute inline examples to see output...
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Differences Demo -->
+        <div id="differences-demo" class="demo-section">
+            <h2>🔍 Key Differences Analysis</h2>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Anonymous Class</th>
+                        <th>Lambda Expression</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td><strong>Syntax Length</strong></td>
+                        <td><span class="cons">❌ Verbose (5+ lines)</span></td>
+                        <td><span class="pros">✅ Concise (1 line possible)</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>@Override Required</strong></td>
+                        <td><span class="cons">❌ Yes, explicit @Override</span></td>
+                        <td><span class="pros">✅ No @Override needed</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Multiple Methods</strong></td>
+                        <td><span class="pros">✅ Can have multiple methods</span></td>
+                        <td><span class="cons">❌ Single method only</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Instance Variables</strong></td>
+                        <td><span class="pros">✅ Can have instance variables</span></td>
+                        <td><span class="cons">❌ No instance variables</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Readability</strong></td>
+                        <td><span class="cons">❌ More boilerplate code</span></td>
+                        <td><span class="pros">✅ Clean and readable</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Performance</strong></td>
+                        <td><span class="cons">❌ Creates .class file</span></td>
+                        <td><span class="pros">✅ More efficient (no extra .class)</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Java Version</strong></td>
+                        <td><span class="pros">✅ Available since Java 1.1</span></td>
+                        <td><span class="cons">⚠️ Requires Java 8+</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="execution-area">
+                <h3>💡 Best Practice Recommendations:</h3>
+                <div style="padding: 20px; background: #f0fff4; border-radius: 8px; border-left: 5px solid #38a169;">
+                    <ul style="line-height: 1.8; margin-left: 20px;">
+                        <li><strong>Use Lambda</strong> for simple, single-method functional interfaces</li>
+                        <li><strong>Use Anonymous Class</strong> when you need multiple methods or instance variables</li>
+                        <li><strong>Lambda expressions</strong> are preferred for Runnable, Callable, and event handlers</li>
+                        <li><strong>Anonymous classes</strong> are better for complex implementations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showDemo(demoType) {
+        // Update active button
+        document.querySelectorAll('.demo-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // Show selected demo
+        document.querySelectorAll('.demo-section').forEach(section => section.classList.remove('active'));
+        document.getElementById(demoType + '-demo').classList.add('active');
+    }
+
+    function runBasicDemo() {
+        const output = document.getElementById('basic-output');
+        output.innerHTML = '';
+
+        setTimeout(() => {
+            addOutput(output, '=== Anonymous Class ===');
+        }, 500);
+
+        setTimeout(() => {
+            addOutput(output, 'Anonymous class running on: Thread-1');
+        }, 1500);
+
+        setTimeout(() => {
+            addOutput(output, '');
+            addOutput(output, '=== Lambda Expression ===');
+        }, 2500);
+
+        setTimeout(() => {
+            addOutput(output, 'Lambda running on: Thread-2');
+        }, 3500);
+
+        setTimeout(() => {
+            addOutput(output, '');
+            addOutput(output, '✅ Both implementations completed successfully!');
+        }, 4500);
+    }
+
+    function runThreadDemo() {
+        const thread1 = document.getElementById('thread1');
+        const thread2 = document.getElementById('thread2');
+        const output = document.getElementById('thread-output');
+
+        output.innerHTML = '';
+
+        // Start thread animations
+        thread1.classList.add('active');
+        thread2.classList.add('active');
+
+        // Thread 1 (Anonymous)
+        setTimeout(() => {
+            document.getElementById('thread1-status').textContent = 'Starting...';
+            addOutput(output, '[Thread-1] Anonymous class thread started');
+        }, 500);
+
+        setTimeout(() => {
+            document.getElementById('thread1-status').textContent = 'Running';
+            addOutput(output, '[Thread-1] Executing anonymous class run() method');
+        }, 1500);
+
+        // Thread 2 (Lambda)
+        setTimeout(() => {
+            document.getElementById('thread2-status').textContent = 'Starting...';
+            addOutput(output, '[Thread-2] Lambda expression thread started');
+        }, 1000);
+
+        setTimeout(() => {
+            document.getElementById('thread2-status').textContent = 'Running';
+            addOutput(output, '[Thread-2] Executing lambda expression');
+        }, 2000);
+
+        // Complete both
+        setTimeout(() => {
+            document.getElementById('thread1-status').textContent = 'Completed';
+            addOutput(output, '[Thread-1] Anonymous class execution finished');
+        }, 3000);
+
+        setTimeout(() => {
+            document.getElementById('thread2-status').textContent = 'Completed';
+            addOutput(output, '[Thread-2] Lambda expression execution finished');
+        }, 3500);
+
+        setTimeout(() => {
+            addOutput(output, '');
+            addOutput(output, '🎉 Both threads completed - same functionality, different syntax!');
+        }, 4000);
+    }
+
+    function resetThreads() {
+        document.getElementById('thread1').classList.remove('active');
+        document.getElementById('thread2').classList.remove('active');
+        document.getElementById('thread1-status').textContent = 'Ready';
+        document.getElementById('thread2-status').textContent = 'Ready';
+        document.getElementById('thread-output').innerHTML = 'Ready to start thread execution demo...';
+    }
+
+    function runInlineDemo() {
+        const output = document.getElementById('inline-output');
+        output.innerHTML = '';
+
+        setTimeout(() => {
+            addOutput(output, '=== Inline Side by Side Execution ===');
+        }, 500);
+
+        setTimeout(() => {
+            addOutput(output, 'Anonymous: Hello World!');
+        }, 1500);
+
+        setTimeout(() => {
+            addOutput(output, 'Lambda: Hello World!');
+        }, 2000);
+
+        setTimeout(() => {
+            addOutput(output, '');
+            addOutput(output, '📊 Comparison:');
+            addOutput(output, '  • Anonymous class: 5 lines of code');
+            addOutput(output, '  • Lambda expression: 1 line of code');
+            addOutput(output, '  • Same functionality: ✅');
+            addOutput(output, '  • Lambda is 80% less code: ✅');
+        }, 2500);
+    }
+
+    function addOutput(container, text) {
+        const line = document.createElement('div');
+        line.className = 'console-line';
+        line.textContent = text;
+        container.appendChild(line);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function clearOutput() {
+        document.getElementById('basic-output').innerHTML = 'Output cleared. Click "Run Both Examples" to execute again...';
+    }
+</script>
+</body>
+</html>

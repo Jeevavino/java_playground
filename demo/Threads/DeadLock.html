@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Java Deadlock Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .demo-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .thread-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 4px solid transparent;
+            transition: all 0.3s ease;
+            min-height: 600px;
+        }
+
+        .thread-1 {
+            border-color: #4ecdc4;
+            background: linear-gradient(145deg, #f8fdfd, #e8f8f5);
+        }
+        .thread-2 {
+            border-color: #ff9ff3;
+            background: linear-gradient(145deg, #fef8fe, #f8e8f5);
+        }
+
+        .thread-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .thread-1 .thread-title {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .thread-2 .thread-title {
+            background: linear-gradient(45deg, #ff9ff3, #f368e0);
+            color: white;
+        }
+
+        .resources-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .resource {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            border: 4px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .resource1 {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+        .resource2 {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .resource.locked {
+            transform: scale(1.15);
+            box-shadow:
+                    0 0 30px rgba(255,107,107,0.6),
+                    0 10px 25px rgba(0,0,0,0.3);
+            border-color: #fff;
+            animation: glow 2s infinite;
+        }
+
+        .resource2.locked {
+            box-shadow:
+                    0 0 30px rgba(78,205,196,0.6),
+                    0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .resource.waiting {
+            animation: waiting-pulse 1.5s infinite;
+            opacity: 0.7;
+            border-color: #ffeb3b;
+            box-shadow:
+                    0 0 25px rgba(255,235,59,0.8),
+                    0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                box-shadow:
+                        0 0 20px rgba(255,107,107,0.4),
+                        0 8px 20px rgba(0,0,0,0.2);
+            }
+            50% {
+                box-shadow:
+                        0 0 35px rgba(255,107,107,0.8),
+                        0 12px 30px rgba(0,0,0,0.3);
+            }
+        }
+
+        .resource2.locked {
+            animation: glow-teal 2s infinite;
+        }
+
+        @keyframes glow-teal {
+            0%, 100% {
+                box-shadow:
+                        0 0 20px rgba(78,205,196,0.4),
+                        0 8px 20px rgba(0,0,0,0.2);
+            }
+            50% {
+                box-shadow:
+                        0 0 35px rgba(78,205,196,0.8),
+                        0 12px 30px rgba(0,0,0,0.3);
+            }
+        }
+
+        @keyframes waiting-pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+        }
+
+        .resource::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .resource.locked::before {
+            opacity: 1;
+        }
+
+        .step {
+            background: linear-gradient(135deg, #e9ecef, #dee2e6);
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 5px solid #6c757d;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .step.active {
+            opacity: 1;
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-left-color: #28a745;
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(40,167,69,0.3);
+        }
+
+        .step.deadlock {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border-left-color: #dc3545;
+            animation: shake 0.5s ease-in-out;
+            box-shadow: 0 3px 10px rgba(220,53,69,0.3);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(5px); }
+            25% { transform: translateX(0px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 0 10px 10px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status {
+            text-align: center;
+            padding: 25px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 3px solid transparent;
+        }
+
+        .status.normal {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border-color: #28a745;
+        }
+
+        .status.deadlock {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border-color: #dc3545;
+            animation: deadlock-blink 1.5s infinite;
+        }
+
+        @keyframes deadlock-blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.8; }
+        }
+
+        .code-section {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            border: 3px solid #4a5568;
+        }
+
+        .explanation {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 6px solid #2196f3;
+            margin: 25px 0;
+            box-shadow: 0 4px 15px rgba(33,150,243,0.2);
+        }
+
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 3px solid #dee2e6;
+        }
+
+        .timeline-step {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #dee2e6, #adb5bd);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            position: relative;
+            transition: all 0.3s ease;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .timeline-step.completed {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .timeline-step.current {
+            background: linear-gradient(135deg, #ffc107, #ffca2c);
+            color: #212529;
+            animation: timeline-pulse 1.5s infinite;
+            transform: scale(1.2);
+        }
+
+        .timeline-step.deadlock {
+            background: linear-gradient(135deg, #dc3545, #e63946);
+            color: white;
+            animation: timeline-shake 1s infinite;
+            transform: scale(1.2);
+        }
+
+        @keyframes timeline-pulse {
+            0%, 100% { box-shadow: 0 4px 10px rgba(255,193,7,0.4); }
+            50% { box-shadow: 0 6px 20px rgba(255,193,7,0.8); }
+        }
+
+        @keyframes timeline-shake {
+            0%, 100% { transform: scale(1.2) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(-2deg); }
+            75% { transform: scale(1.2) rotate(2deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .demo-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .resource {
+                width: 120px;
+                height: 120px;
+                font-size: 1rem;
+            }
+
+            .thread-container {
+                min-height: auto;
+                padding: 20px;
+            }
+
+            .btn {
+                padding: 12px 25px;
+                font-size: 1rem;
+                margin: 5px;
+            }
+
+            .timeline-step {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔒 Interactive Java Deadlock Demo</h1>
+        <p>Learn how deadlock occurs when two threads compete for resources</p>
+    </div>
+
+    <div class="content">
+        <div class="explanation">
+            <h3>What is Deadlock?</h3>
+            <p><strong>Deadlock</strong> occurs when two or more threads are blocked forever, each waiting for the other to release a resource. In this demo, Thread-1 and Thread-2 will try to acquire locks on Resource-1 and Resource-2 in opposite order, creating a deadlock situation.</p>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-step" id="step-0">0</div>
+            <div class="timeline-step" id="step-1">1</div>
+            <div class="timeline-step" id="step-2">2</div>
+            <div class="timeline-step" id="step-3">3</div>
+            <div class="timeline-step" id="step-4">💀</div>
+        </div>
+
+        <div class="demo-section">
+            <div class="thread-container thread-1">
+                <div class="thread-title">🟢 Thread-1</div>
+                <div class="resources-container">
+                    <div class="resource resource1" id="resource1-t1">Resource 1</div>
+                    <div class="resource resource2" id="resource2-t1">Resource 2</div>
+                </div>
+                <div class="steps">
+                    <div class="step" id="step-t1-1">1. 🔒 Acquire Resource 1</div>
+                    <div class="step" id="step-t1-2">2. ⏱️ Sleep 1000ms (doing work)</div>
+                    <div class="step" id="step-t1-3">3. 🔍 Try to acquire Resource 2</div>
+                    <div class="step" id="step-t1-4">4. 🚫 BLOCKED! Waiting for Resource 2...</div>
+                </div>
+            </div>
+
+            <div class="thread-container thread-2">
+                <div class="thread-title">🟡 Thread-2</div>
+                <div class="resources-container">
+                    <div class="resource resource2" id="resource2-t2">Resource 2</div>
+                    <div class="resource resource1" id="resource1-t2">Resource 1</div>
+                </div>
+                <div class="steps">
+                    <div class="step" id="step-t2-1">1. 🔒 Acquire Resource 2</div>
+                    <div class="step" id="step-t2-2">2. ⏱️ Sleep 1000ms (doing work)</div>
+                    <div class="step" id="step-t2-3">3. 🔍 Try to acquire Resource 1</div>
+                    <div class="step" id="step-t2-4">4. 🚫 BLOCKED! Waiting for Resource 1...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status normal" id="status">
+            Click "Start Demo" to see deadlock in action! 🚀
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="startBtn" onclick="startDemo()">▶️ Start Demo</button>
+            <button class="btn" id="resetBtn" onclick="resetDemo()" disabled>🔄 Reset</button>
+            <button class="btn" id="stepBtn" onclick="nextStep()" disabled>👆 Next Step</button>
+            <button class="btn" onclick="enableStepMode()">🔍 Step-by-Step Mode</button>
+        </div>
+
+        <div class="code-section">
+            <h3 style="color: #4299e1; margin-bottom: 15px;">📝 Java Code Equivalent:</h3>
+            <pre><code>public class DeadlockDemo {
+    private final Object resource1 = new Object();
+    private final Object resource2 = new Object();
+
+    private void task1() {
+        synchronized (resource1) {          // Thread-1 locks resource1
+            System.out.println("Thread-1: Got resource1");
+            sleep(1000);
+            synchronized (resource2) {      // Thread-1 waits for resource2
+                System.out.println("Thread-1: Got resource2");
+            }
+        }
+    }
+
+    private void task2() {
+        synchronized (resource2) {          // Thread-2 locks resource2
+            System.out.println("Thread-2: Got resource2");
+            sleep(1000);
+            synchronized (resource1) {      // Thread-2 waits for resource1
+                System.out.println("Thread-2: Got resource1");
+            }
+        }
+    }
+}</code></pre>
+        </div>
+
+        <div class="explanation">
+            <h3>🛡️ How to Prevent Deadlock:</h3>
+            <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.6;">
+                <li><strong>Lock Ordering:</strong> Always acquire locks in the same order across all threads</li>
+                <li><strong>Timeout:</strong> Use tryLock() with timeout to avoid infinite waiting</li>
+                <li><strong>Deadlock Detection:</strong> Use ThreadMXBean.findDeadlockedThreads() for monitoring</li>
+                <li><strong>Avoid Nested Locks:</strong> Minimize synchronized block complexity and nesting</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentStep = 0;
+    let isRunning = false;
+    let stepMode = false;
+
+    const steps = [
+        {
+            description: "Starting threads...",
+            action: () => {
+                updateStatus("🚀 Both threads are starting...", "normal");
+                updateTimeline(0);
+            }
+        },
+        {
+            description: "Thread-1 acquires Resource 1, Thread-2 acquires Resource 2",
+            action: () => {
+                document.getElementById('resource1-t1').classList.add('locked');
+                document.getElementById('resource2-t2').classList.add('locked');
+                document.getElementById('step-t1-1').classList.add('active');
+                document.getElementById('step-t2-1').classList.add('active');
+                updateStatus("✅ Both threads have acquired their first resources", "normal");
+                updateTimeline(1);
+            }
+        },
+        {
+            description: "Both threads sleep for 1000ms",
+            action: () => {
+                document.getElementById('step-t1-2').classList.add('active');
+                document.getElementById('step-t2-2').classList.add('active');
+                updateStatus("⏱️ Threads are sleeping... simulating work", "normal");
+                updateTimeline(2);
+            }
+        },
+        {
+            description: "Thread-1 tries Resource 2, Thread-2 tries Resource 1",
+            action: () => {
+                document.getElementById('resource2-t1').classList.add('waiting');
+                document.getElementById('resource1-t2').classList.add('waiting');
+                document.getElementById('step-t1-3').classList.add('active');
+                document.getElementById('step-t2-3').classList.add('active');
+                updateStatus("🔍 Both threads are trying to acquire second resources...", "normal");
+                updateTimeline(3);
+            }
+        },
+        {
+            description: "DEADLOCK! Both threads are blocked waiting for each other",
+            action: () => {
+                document.getElementById('step-t1-4').classList.add('active', 'deadlock');
+                document.getElementById('step-t2-4').classList.add('active', 'deadlock');
+                updateStatus("💀 DEADLOCK DETECTED! Threads are blocked forever!", "deadlock");
+                updateTimeline(4);
+                document.getElementById('stepBtn').disabled = true;
+            }
+        }
+    ];
+
+    function startDemo() {
+        if (isRunning) return;
+
+        isRunning = true;
+        stepMode = false;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('resetBtn').disabled = false;
+        document.getElementById('stepBtn').disabled = true;
+
+        currentStep = 0;
+        runNextStep();
+    }
+
+    function runNextStep() {
+        if (currentStep < steps.length) {
+            steps[currentStep].action();
+            currentStep++;
+
+            if (currentStep < steps.length && !stepMode) {
+                setTimeout(runNextStep, 2500);
+            } else if (currentStep >= steps.length) {
+                isRunning = false;
+            }
+        }
+    }
+
+    function nextStep() {
+        if (currentStep < steps.length) {
+            steps[currentStep].action();
+            currentStep++;
+
+            if (currentStep >= steps.length) {
+                document.getElementById('stepBtn').disabled = true;
+                isRunning = false;
+            }
+        }
+    }
+
+    function enableStepMode() {
+        stepMode = true;
+        isRunning = true;
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('resetBtn').disabled = false;
+        document.getElementById('stepBtn').disabled = false;
+        currentStep = 0;
+    }
+
+    function resetDemo() {
+        isRunning = false;
+        stepMode = false;
+        currentStep = 0;
+
+        // Reset UI elements
+        document.querySelectorAll('.resource').forEach(r => {
+            r.classList.remove('locked', 'waiting');
+        });
+
+        document.querySelectorAll('.step').forEach(s => {
+            s.classList.remove('active', 'deadlock');
+        });
+
+        document.querySelectorAll('.timeline-step').forEach(s => {
+            s.classList.remove('completed', 'current', 'deadlock');
+        });
+
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('resetBtn').disabled = true;
+        document.getElementById('stepBtn').disabled = true;
+
+        updateStatus("Click 'Start Demo' to see deadlock in action! 🚀", "normal");
+    }
+
+    function updateStatus(message, type) {
+        const status = document.getElementById('status');
+        status.textContent = message;
+        status.className = `status ${type}`;
+    }
+
+    function updateTimeline(step) {
+        document.querySelectorAll('.timeline-step').forEach((elem, index) => {
+            elem.classList.remove('completed', 'current', 'deadlock');
+            if (index < step) {
+                elem.classList.add('completed');
+            } else if (index === step) {
+                if (step === 4) {
+                    elem.classList.add('deadlock');
+                } else {
+                    elem.classList.add('current');
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>
