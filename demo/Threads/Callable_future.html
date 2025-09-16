@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Callable & Future Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            z-index: 10;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 3px solid #2196f3;
+        }
+
+        .key-concepts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .concept-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #2196f3;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .concept-title {
+            font-weight: bold;
+            color: #1976d2;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .demo-area {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 25px;
+            margin: 25px 0;
+            align-items: start;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            border: 3px solid #dee2e6;
+            min-height: 400px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .executor-section .section-title {
+            background: linear-gradient(45deg, #4caf50, #388e3c);
+        }
+
+        .results-section .section-title {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+        }
+
+        .task-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #dee2e6;
+            transition: all 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .task-card.submitted {
+            border-color: #2196f3;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            animation: taskSubmit 0.8s ease-out;
+        }
+
+        .task-card.running {
+            border-color: #4caf50;
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            animation: taskRunning 2s infinite ease-in-out;
+        }
+
+        .task-card.completed {
+            border-color: #ff9800;
+            background: linear-gradient(135deg, #fff3e0, #ffcc02);
+            animation: taskComplete 0.8s ease-out;
+        }
+
+        @keyframes taskSubmit {
+            0% { transform: scale(0.9) translateY(10px); opacity: 0.7; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        @keyframes taskRunning {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes taskComplete {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .task-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #1976d2;
+        }
+
+        .task-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-waiting {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-running {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status-completed {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .task-progress {
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .thread-pool {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .thread {
+            background: linear-gradient(45deg, #2196f3, #1976d2);
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thread.busy {
+            background: linear-gradient(45deg, #ff5722, #d84315);
+            animation: threadWorking 1.5s infinite ease-in-out;
+        }
+
+        @keyframes threadWorking {
+            0%, 100% { box-shadow: 0 4px 15px rgba(255,87,34,0.4); }
+            50% { box-shadow: 0 8px 25px rgba(255,87,34,0.7); }
+        }
+
+        .results-area {
+            min-height: 300px;
+        }
+
+        .result-item {
+            background: linear-gradient(135deg, #fff3e0, #ffcc02);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 5px solid #ff9800;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result-item.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .controls {
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 0 10px;
+            transition: all 0.4s ease;
+            box-shadow: 0 5px 20px rgba(102,126,234,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(102,126,234,0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.start {
+            background: linear-gradient(45deg, #4caf50, #388e3c);
+        }
+
+        .btn.reset {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .console {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 3px solid #4a5568;
+        }
+
+        .console-line {
+            margin: 3px 0;
+            animation: consoleLine 0.5s ease-out;
+            line-height: 1.4;
+        }
+
+        @keyframes consoleLine {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .code-section {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            font-family: 'Courier New', monospace;
+            border: 3px solid #4a5568;
+        }
+
+        .keyword { color: #63b3ed; }
+        .type { color: #68d391; }
+        .string { color: #fbb6ce; }
+        .comment { color: #a0aec0; font-style: italic; }
+        .method { color: #fbd38d; }
+
+        @media (max-width: 1200px) {
+            .demo-area {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .demo-area {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔮 Java Callable & Future Demo</h1>
+        <p>Interactive visualization of asynchronous task execution with return values</p>
+    </div>
+
+    <div class="content">
+        <div class="info-panel">
+            <h3>🎯 Key Concepts</h3>
+            <div class="key-concepts">
+                <div class="concept-item">
+                    <div class="concept-title">Callable&lt;T&gt;</div>
+                    <div>Like Runnable, but can return a value and throw exceptions</div>
+                </div>
+                <div class="concept-item">
+                    <div class="concept-title">Future&lt;T&gt;</div>
+                    <div>Represents result of asynchronous computation - get() blocks until complete</div>
+                </div>
+                <div class="concept-item">
+                    <div class="concept-title">ExecutorService</div>
+                    <div>Thread pool that can execute Callable tasks and return Future objects</div>
+                </div>
+                <div class="concept-item">
+                    <div class="concept-title">Blocking Operation</div>
+                    <div>future.get() waits until task completes and returns the result</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-area">
+            <div class="section">
+                <div class="section-title">📋 Callable Tasks</div>
+                <div id="tasks-area">
+                    <div class="task-card" id="task1">
+                        <div class="task-header">
+                            <div class="task-name">🚀 TASK-1</div>
+                            <div class="task-status status-waiting" id="status1">Waiting</div>
+                        </div>
+                        <div class="task-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress1"></div>
+                            </div>
+                            <div class="progress-text" id="progressText1">Ready (3 seconds work)</div>
+                        </div>
+                    </div>
+
+                    <div class="task-card" id="task2">
+                        <div class="task-header">
+                            <div class="task-name">⚡ TASK-2</div>
+                            <div class="task-status status-waiting" id="status2">Waiting</div>
+                        </div>
+                        <div class="task-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress2"></div>
+                            </div>
+                            <div class="progress-text" id="progressText2">Ready (2 seconds work)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section executor-section">
+                <div class="section-title">🏭 ExecutorService (2 threads)</div>
+                <div class="thread-pool">
+                    <div class="thread" id="thread1">Thread-1 (Idle)</div>
+                    <div class="thread" id="thread2">Thread-2 (Idle)</div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4 style="color: #4caf50; margin-bottom: 10px;">🔮 Future Objects:</h4>
+                    <div style="background: #f5f5f5; padding: 10px; border-radius: 8px; font-family: monospace;">
+                        <div id="future1">Future&lt;String&gt; future1 = null;</div>
+                        <div id="future2">Future&lt;String&gt; future2 = null;</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section results-section">
+                <div class="section-title">📊 Results</div>
+                <div class="results-area" id="results-area">
+                    <div style="text-align: center; color: #666; padding: 20px;">
+                        Results will appear here as tasks complete...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn start" onclick="startDemo()" id="startBtn">🚀 Start Callable Demo</button>
+            <button class="btn reset" onclick="resetDemo()">🔄 Reset Demo</button>
+        </div>
+
+        <div class="console" id="console">
+            <div style="color: #4299e1; font-weight: bold; margin-bottom: 10px;">
+                📟 Console Output (Real-time execution log)
+            </div>
+            <div id="console-content">Click "Start Callable Demo" to begin execution...</div>
+        </div>
+
+        <div class="code-section">
+            <h3 style="color: #4299e1; margin-bottom: 15px;">💻 Java Code Structure:</h3>
+            <pre><code><span class="comment">// 1. Create Callable tasks that return values</span>
+<span class="keyword">public class</span> <span class="type">BasicCallableTask</span> <span class="keyword">implements</span> <span class="type">Callable</span>&lt;<span class="type">String</span>&gt; {
+    <span class="keyword">private final</span> <span class="type">String</span> taskName;
+    <span class="keyword">private final int</span> workTime;
+
+    <span class="keyword">@Override</span>
+    <span class="keyword">public</span> <span class="type">String</span> <span class="method">call</span>() <span class="keyword">throws</span> <span class="type">Exception</span> {
+        <span class="comment">// Simulate work and return result</span>
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = 1; i <= workTime; i++) {
+            <span class="type">Thread</span>.<span class="method">sleep</span>(1000);
+        }
+        <span class="keyword">return</span> <span class="string">"Task completed!"</span>;
+    }
+}
+
+<span class="comment">// 2. Submit to ExecutorService and get Future</span>
+<span class="type">ExecutorService</span> executor = <span class="type">Executors</span>.<span class="method">newFixedThreadPool</span>(2);
+<span class="type">Future</span>&lt;<span class="type">String</span>&gt; future1 = executor.<span class="method">submit</span>(task1);
+<span class="type">Future</span>&lt;<span class="type">String</span>&gt; future2 = executor.<span class="method">submit</span>(task2);
+
+<span class="comment">// 3. Get results (blocking operation)</span>
+<span class="type">String</span> result1 = future1.<span class="method">get</span>();  <span class="comment">// Waits until complete</span>
+<span class="type">String</span> result2 = future2.<span class="method">get</span>();  <span class="comment">// Waits until complete</span></code></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isRunning = false;
+    let taskTimers = [];
+
+    function addConsoleOutput(message, delay = 0) {
+        setTimeout(() => {
+            const content = document.getElementById('console-content');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            content.appendChild(line);
+            content.scrollTop = content.scrollHeight;
+
+            // Keep only last 20 lines
+            while (content.children.length > 20) {
+                content.removeChild(content.firstChild);
+            }
+        }, delay);
+    }
+
+    function updateTaskProgress(taskNum, progress, status, statusClass) {
+        document.getElementById(`progress${taskNum}`).style.width = progress + '%';
+        document.getElementById(`progressText${taskNum}`).textContent = status;
+
+        const statusElement = document.getElementById(`status${taskNum}`);
+        statusElement.textContent = status.split(' ')[0];
+        statusElement.className = `task-status ${statusClass}`;
+    }
+
+    function updateFutureDisplay(taskNum, status) {
+        document.getElementById(`future${taskNum}`).innerHTML =
+            `Future&lt;String&gt; future${taskNum} = <span style="color: #4caf50;">${status}</span>;`;
+    }
+
+    function addResult(taskName, result) {
+        const resultsArea = document.getElementById('results-area');
+
+        // Clear placeholder if exists
+        if (resultsArea.children[0] && resultsArea.children[0].style.textAlign === 'center') {
+            resultsArea.innerHTML = '';
+        }
+
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item';
+        resultItem.innerHTML = `
+                <div style="font-weight: bold; color: #f57c00; margin-bottom: 5px;">${taskName}:</div>
+                <div style="color: #2e7d32;">${result}</div>
+            `;
+        resultsArea.appendChild(resultItem);
+
+        // Trigger animation
+        setTimeout(() => resultItem.classList.add('show'), 100);
+    }
+
+    function simulateTask(taskNum, workTime) {
+        return new Promise((resolve) => {
+            const taskName = `TASK-${taskNum}`;
+            let currentStep = 0;
+
+            // Mark task as submitted
+            document.getElementById(`task${taskNum}`).classList.add('submitted');
+            updateFutureDisplay(taskNum, 'SUBMITTED');
+            addConsoleOutput(`📋 Submitting ${taskName} to executor...`);
+
+            // Find available thread
+            setTimeout(() => {
+                let threadId = 1;
+                const thread1 = document.getElementById('thread1');
+                const thread2 = document.getElementById('thread2');
+
+                if (thread1.classList.contains('busy')) {
+                    threadId = 2;
+                }
+
+                const threadElement = document.getElementById(`thread${threadId}`);
+                threadElement.classList.add('busy');
+                threadElement.textContent = `Thread-${threadId} (Running ${taskName})`;
+
+                // Start task execution
+                document.getElementById(`task${taskNum}`).classList.remove('submitted');
+                document.getElementById(`task${taskNum}`).classList.add('running');
+                updateFutureDisplay(taskNum, 'RUNNING');
+                addConsoleOutput(`🚀 Starting task: ${taskName}`);
+                addConsoleOutput(`⏱️  Task ${taskName} will work for ${workTime} seconds`);
+
+                // Progress simulation
+                const progressInterval = setInterval(() => {
+                    currentStep++;
+                    const progressPercent = (currentStep / workTime) * 100;
+
+                    updateTaskProgress(taskNum, progressPercent,
+                        `Working ${currentStep}/${workTime}`, 'status-running');
+
+                    addConsoleOutput(`⚙️  Task ${taskName} - Working... ${currentStep}/${workTime}`);
+
+                    if (currentStep >= workTime) {
+                        clearInterval(progressInterval);
+
+                        // Complete task
+                        const result = `✅ Task ${taskName} completed successfully!`;
+
+                        document.getElementById(`task${taskNum}`).classList.remove('running');
+                        document.getElementById(`task${taskNum}`).classList.add('completed');
+                        updateTaskProgress(taskNum, 100, 'Completed', 'status-completed');
+                        updateFutureDisplay(taskNum, 'COMPLETED');
+
+                        // Free up thread
+                        threadElement.classList.remove('busy');
+                        threadElement.textContent = `Thread-${threadId} (Idle)`;
+
+                        addConsoleOutput(result);
+                        addResult(taskName, result);
+
+                        resolve(result);
+                    }
+                }, 1000);
+
+            }, 500 + (taskNum * 200)); // Slight delay between task starts
+        });
+    }
+
+    async function startDemo() {
+        if (isRunning) return;
+
+        isRunning = true;
+        document.getElementById('startBtn').disabled = true;
+
+        // Clear console
+        document.getElementById('console-content').innerHTML = '';
+
+        addConsoleOutput('=== Callable Demo Started ===');
+        addConsoleOutput('📋 Creating thread pool...');
+        addConsoleOutput('📋 Submitting tasks to executor...');
+        addConsoleOutput('⏳ Waiting for results...');
+
+        try {
+            // Submit both tasks simultaneously
+            const task1Promise = simulateTask(1, 3);
+            const task2Promise = simulateTask(2, 2);
+
+            // Wait for both tasks to complete (simulating future.get())
+            addConsoleOutput('🔄 Calling future1.get() - blocking until Task-1 completes...', 1000);
+            addConsoleOutput('🔄 Calling future2.get() - blocking until Task-2 completes...', 1200);
+
+            const results = await Promise.all([task1Promise, task2Promise]);
+
+            // Show final results
+            setTimeout(() => {
+                addConsoleOutput('');
+                addConsoleOutput('=== Results ===');
+                addConsoleOutput(`Result 1: ${results[0]}`);
+                addConsoleOutput(`Result 2: ${results[1]}`);
+                addConsoleOutput('');
+                addConsoleOutput('🔚 Shutting down executor...');
+                addConsoleOutput('=== Demo Completed ===');
+
+                isRunning = false;
+                document.getElementById('startBtn').disabled = false;
+            }, 1000);
+
+        } catch (error) {
+            addConsoleOutput(`❌ Error: ${error.message}`);
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+        }
+    }
+
+    function resetDemo() {
+        // Clear all timers
+        taskTimers.forEach(timer => clearInterval(timer));
+        taskTimers = [];
+
+        // Reset tasks
+        ['task1', 'task2'].forEach(id => {
+            const task = document.getElementById(id);
+            task.className = 'task-card';
+        });
+
+        // Reset progress
+        updateTaskProgress(1, 0, 'Ready (3 seconds work)', 'status-waiting');
+        updateTaskProgress(2, 0, 'Ready (2 seconds work)', 'status-waiting');
+
+        // Reset futures
+        updateFutureDisplay(1, 'null');
+        updateFutureDisplay(2, 'null');
+
+        // Reset threads
+        document.getElementById('thread1').className = 'thread';
+        document.getElementById('thread1').textContent = 'Thread-1 (Idle)';
+        document.getElementById('thread2').className = 'thread';
+        document.getElementById('thread2').textContent = 'Thread-2 (Idle)';
+
+        // Clear results
+        document.getElementById('results-area').innerHTML = `
+                <div style="text-align: center; color: #666; padding: 20px;">
+                    Results will appear here as tasks complete...
+                </div>
+            `;
+
+        // Clear console
+        document.getElementById('console-content').innerHTML = 'Click "Start Callable Demo" to begin execution...';
+
+        // Reset state
+        isRunning = false;
+        document.getElementById('startBtn').disabled = false;
+    }
+
+    // Initialize
+    resetDemo();
+</script>
+</body>
+</html>
