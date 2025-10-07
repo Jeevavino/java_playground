@@ -41,13 +41,16 @@ class CallableDemo {
             // Create callable tasks
             Callable<String> task1 = new BasicCallableTask("TASK-1", 3);
             Callable<String> task2 = new BasicCallableTask("TASK-2", 2);
+            Callable<String> task3 = () -> "bala";
 
             System.out.println("📋 Submitting tasks to executor...\n");
 
             // Submit tasks and get Future objects
             Future<String> future1 = executor.submit(task1);
             Future<String> future2 = executor.submit(task2);
+            Future<String> future3 = executor.submit(task3);
 
+            //Do some operation
             System.out.println("⏳ Waiting for results...\n");
 
             // Get results (this will block until tasks complete)
