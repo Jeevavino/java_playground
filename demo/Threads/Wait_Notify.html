@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wait-Notify Producer-Consumer Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+
+        .demo-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .thread-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 3px solid #e0e0e0;
+        }
+
+        .thread-box.producer {
+            border-color: #51cf66;
+        }
+
+        .thread-box.consumer {
+            border-color: #4dabf7;
+        }
+
+        .thread-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .thread-title.producer {
+            color: #51cf66;
+        }
+
+        .thread-title.consumer {
+            color: #4dabf7;
+        }
+
+        .thread-visual {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 150px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .thread-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .thread-status {
+            font-size: 1.2em;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+
+        .status-idle {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .status-working {
+            background: #d3f9d8;
+            color: #2b8a3e;
+            animation: pulse 2s infinite;
+        }
+
+        .status-waiting {
+            background: #ffe8cc;
+            color: #d9480f;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .shared-resource {
+            background: linear-gradient(135deg, #ffd43b 0%, #fab005 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .resource-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .data-box {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 12px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            transition: all 0.5s ease;
+        }
+
+        .data-box.empty {
+            color: #adb5bd;
+            font-style: italic;
+        }
+
+        .data-flag {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.5s ease;
+        }
+
+        .flag-true {
+            background: #51cf66;
+            color: white;
+        }
+
+        .flag-false {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px 35px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #51cf66 0%, #69db7c 100%);
+            color: white;
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #ffd43b 0%, #fab005 100%);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #868e96 0%, #adb5bd 100%);
+            color: white;
+        }
+
+        .console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.8;
+        }
+
+        .console-line {
+            margin: 5px 0;
+            animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .console-line.producer { color: #69db7c; }
+        .console-line.consumer { color: #74c0fc; }
+        .console-line.waiting { color: #ffd43b; }
+        .console-line.info { color: #adb5bd; }
+        .console-line.success { color: #51cf66; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            transition: all 0.5s ease;
+        }
+
+        .explanation {
+            background: #e7f5ff;
+            border-left: 5px solid #4dabf7;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .explanation h3 {
+            color: #1864ab;
+            margin-bottom: 10px;
+        }
+
+        .explanation p {
+            color: #495057;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 968px) {
+            .demo-section {
+                grid-template-columns: 1fr;
+            }
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔄 Wait-Notify Producer-Consumer Demo</h1>
+    <p class="subtitle">Interactive Visualization of Thread Synchronization</p>
+
+    <!-- Explanation -->
+    <div class="explanation">
+        <h3>📚 How It Works</h3>
+        <p>
+            <strong>Producer:</strong> Creates data and puts it in the shared resource. If data already exists, it <strong>waits</strong> (releases lock).<br>
+            <strong>Consumer:</strong> Takes data from shared resource. If no data exists, it <strong>waits</strong> (releases lock).<br>
+            <strong>notify():</strong> Wakes up the waiting thread so it can try again.
+        </p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-box">
+            <div class="stat-label">Items Produced</div>
+            <div class="stat-value" id="produced-count">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Items Consumed</div>
+            <div class="stat-value" id="consumed-count">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Current Item</div>
+            <div class="stat-value" id="current-item">0</div>
+        </div>
+    </div>
+
+    <!-- Shared Resource -->
+    <div class="shared-resource">
+        <div class="resource-title">📦 Shared Resource</div>
+        <div class="data-box empty" id="data-box">
+            (empty)
+        </div>
+        <div>
+            <span style="color: white; font-weight: bold; margin-right: 10px;">hasData:</span>
+            <span class="data-flag flag-false" id="has-data-flag">false</span>
+        </div>
+    </div>
+
+    <!-- Producer and Consumer -->
+    <div class="demo-section">
+        <!-- Producer -->
+        <div class="thread-box producer">
+            <h2 class="thread-title producer">🏭 Producer Thread</h2>
+            <div class="thread-visual">
+                <div class="thread-icon">👨‍🏭</div>
+                <div class="thread-status status-idle" id="producer-status">Idle</div>
+                <div id="producer-data" style="color: #666; font-size: 0.9em;"></div>
+            </div>
+        </div>
+
+        <!-- Consumer -->
+        <div class="thread-box consumer">
+            <h2 class="thread-title consumer">🛒 Consumer Thread</h2>
+            <div class="thread-visual">
+                <div class="thread-icon">👨‍💼</div>
+                <div class="thread-status status-idle" id="consumer-status">Idle</div>
+                <div id="consumer-data" style="color: #666; font-size: 0.9em;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn btn-start" id="start-btn" onclick="startDemo()">▶️ Start Demo</button>
+        <button class="btn btn-pause" id="pause-btn" onclick="pauseDemo()" disabled>⏸️ Pause</button>
+        <button class="btn btn-reset" onclick="resetDemo()">🔄 Reset</button>
+    </div>
+
+    <!-- Console -->
+    <div class="console" id="console">
+        <div class="console-line info">Click "Start Demo" to begin...</div>
+    </div>
+</div>
+
+<script>
+    let isRunning = false;
+    let isPaused = false;
+    let producedCount = 0;
+    let consumedCount = 0;
+    let currentItem = 1;
+    let hasData = false;
+    let currentData = null;
+
+    async function startDemo() {
+        if (isRunning) return;
+
+        isRunning = true;
+        isPaused = false;
+        document.getElementById('start-btn').disabled = true;
+        document.getElementById('pause-btn').disabled = false;
+
+        clearConsole();
+        addConsoleLog('🚀 Demo started!', 'info');
+        await sleep(1000);
+        addConsoleLog('Producer and Consumer threads starting...', 'info');
+        await sleep(1000);
+
+        // Run producer and consumer concurrently
+        Promise.all([
+            runProducer(),
+            runConsumer()
+        ]).then(async () => {
+            await sleep(1000);
+            addConsoleLog('✅ All done!', 'success');
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('pause-btn').disabled = true;
+            isRunning = false;
+        });
+    }
+
+    async function runProducer() {
+        for (let i = 1; i <= 5 && isRunning; i++) {
+            while (isPaused) await sleep(100);
+
+            // Check if data already exists
+            if (hasData) {
+                updateProducerStatus('waiting', 'Waiting to produce...');
+                addConsoleLog('Producer waiting to produce...', 'waiting');
+                await sleep(1000);
+
+                // Wait until consumer takes the data
+                while (hasData && isRunning && !isPaused) {
+                    await sleep(200);
+                }
+            }
+
+            if (!isRunning) break;
+            while (isPaused) await sleep(100);
+
+            // Produce data
+            updateProducerStatus('working', 'Producing...');
+            await sleep(1500);
+
+            const data = 'Data-' + i;
+            currentData = data;
+            hasData = true;
+            updateSharedResource(data, true);
+            producedCount++;
+            updateStats();
+
+            await sleep(500);
+            addConsoleLog('Producer produced: ' + data, 'producer');
+            updateProducerStatus('idle', 'Idle');
+
+            // Simulate production time
+            await sleep(3000);
+        }
+
+        updateProducerStatus('idle', 'Finished');
+    }
+
+    async function runConsumer() {
+        // Small delay so producer goes first
+        await sleep(1000);
+
+        for (let i = 1; i <= 5 && isRunning; i++) {
+            while (isPaused) await sleep(100);
+
+            // Check if data exists
+            if (!hasData) {
+                updateConsumerStatus('waiting', 'Waiting for data...');
+                addConsoleLog('Consumer waiting for data...', 'waiting');
+                await sleep(1000);
+
+                // Wait until producer provides data
+                while (!hasData && isRunning && !isPaused) {
+                    await sleep(200);
+                }
+            }
+
+            if (!isRunning) break;
+            while (isPaused) await sleep(100);
+
+            // Consume data
+            updateConsumerStatus('working', 'Consuming...');
+            await sleep(1500);
+
+            const consumedData = currentData;
+            hasData = false;
+            updateSharedResource(null, false);
+            consumedCount++;
+            currentItem = i;
+            updateStats();
+
+            await sleep(500);
+            addConsoleLog('Consumer consumed: ' + consumedData, 'consumer');
+            updateConsumerStatus('idle', 'Idle');
+
+            // Wait a bit before next iteration
+            await sleep(1000);
+        }
+
+        updateConsumerStatus('idle', 'Finished');
+    }
+
+    function updateProducerStatus(status, text) {
+        const statusEl = document.getElementById('producer-status');
+        const dataEl = document.getElementById('producer-data');
+
+        statusEl.className = 'thread-status status-' + status;
+        statusEl.textContent = text;
+
+        if (status === 'working') {
+            dataEl.textContent = 'Creating data...';
+        } else if (status === 'waiting') {
+            dataEl.textContent = 'Buffer full';
+        } else {
+            dataEl.textContent = '';
+        }
+    }
+
+    function updateConsumerStatus(status, text) {
+        const statusEl = document.getElementById('consumer-status');
+        const dataEl = document.getElementById('consumer-data');
+
+        statusEl.className = 'thread-status status-' + status;
+        statusEl.textContent = text;
+
+        if (status === 'working') {
+            dataEl.textContent = 'Reading data...';
+        } else if (status === 'waiting') {
+            dataEl.textContent = 'Buffer empty';
+        } else {
+            dataEl.textContent = '';
+        }
+    }
+
+    function updateSharedResource(data, hasDataFlag) {
+        const dataBox = document.getElementById('data-box');
+        const flag = document.getElementById('has-data-flag');
+
+        if (data) {
+            dataBox.textContent = data;
+            dataBox.className = 'data-box';
+        } else {
+            dataBox.textContent = '(empty)';
+            dataBox.className = 'data-box empty';
+        }
+
+        flag.textContent = hasDataFlag.toString();
+        flag.className = 'data-flag ' + (hasDataFlag ? 'flag-true' : 'flag-false');
+    }
+
+    function updateStats() {
+        document.getElementById('produced-count').textContent = producedCount;
+        document.getElementById('consumed-count').textContent = consumedCount;
+        document.getElementById('current-item').textContent = currentItem;
+    }
+
+    function pauseDemo() {
+        isPaused = !isPaused;
+        const btn = document.getElementById('pause-btn');
+        if (isPaused) {
+            btn.textContent = '▶️ Resume';
+            addConsoleLog('⏸️ Paused', 'info');
+        } else {
+            btn.textContent = '⏸️ Pause';
+            addConsoleLog('▶️ Resumed', 'info');
+        }
+    }
+
+    function resetDemo() {
+        isRunning = false;
+        isPaused = false;
+        producedCount = 0;
+        consumedCount = 0;
+        currentItem = 1;
+        hasData = false;
+        currentData = null;
+
+        document.getElementById('start-btn').disabled = false;
+        document.getElementById('pause-btn').disabled = true;
+        document.getElementById('pause-btn').textContent = '⏸️ Pause';
+
+        updateSharedResource(null, false);
+        updateStats();
+        updateProducerStatus('idle', 'Idle');
+        updateConsumerStatus('idle', 'Idle');
+
+        clearConsole();
+        addConsoleLog('Click "Start Demo" to begin...', 'info');
+    }
+
+    function addConsoleLog(message, type) {
+        const console = document.getElementById('console');
+        const line = document.createElement('div');
+        line.className = 'console-line ' + type;
+        line.textContent = message;
+        console.appendChild(line);
+        console.scrollTop = console.scrollHeight;
+    }
+
+    function clearConsole() {
+        document.getElementById('console').innerHTML = '';
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+</script>
+</body>
+</html>
