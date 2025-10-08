@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future vs CompletableFuture - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 3px solid #e0e0e0;
+        }
+
+        .demo-section.future {
+            border-color: #ff6b6b;
+        }
+
+        .demo-section.completable {
+            border-color: #51cf66;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title.future {
+            color: #ff6b6b;
+        }
+
+        .section-title.completable {
+            color: #51cf66;
+        }
+
+        .description {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .visual-demo {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thread {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .thread-label {
+            font-weight: bold;
+            min-width: 120px;
+            color: #333;
+        }
+
+        .thread-track {
+            flex: 1;
+            height: 40px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thread-indicator {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .thread-indicator.blocked {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ff8787 100%);
+        }
+
+        .thread-indicator.active {
+            background: linear-gradient(90deg, #51cf66 0%, #69db7c 100%);
+        }
+
+        .thread-indicator.working {
+            background: linear-gradient(90deg, #ffd43b 0%, #fab005 100%);
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn-future {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+            color: white;
+        }
+
+        .btn-completable {
+            background: linear-gradient(135deg, #51cf66 0%, #69db7c 100%);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #868e96 0%, #adb5bd 100%);
+            color: white;
+        }
+
+        .console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            line-height: 1.8;
+        }
+
+        .console-line {
+            margin: 5px 0;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .console-line.info { color: #4fc3f7; }
+        .console-line.success { color: #66bb6a; }
+        .console-line.warning { color: #ffa726; }
+        .console-line.error { color: #ef5350; }
+        .console-line.work { color: #ab47bc; }
+
+        .comparison-table {
+            margin-top: 30px;
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 1.2em;
+            text-align: left;
+        }
+
+        .comparison-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: white;
+        }
+
+        .comparison-table tr:nth-child(even) td {
+            background: #f8f9fa;
+        }
+
+        .comparison-table td:first-child {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .badge.blocking {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .badge.non-blocking {
+            background: #51cf66;
+            color: white;
+        }
+
+        .key-concepts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .concept-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .concept-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .concept-card:nth-child(2) {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .concept-card:nth-child(3) {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        @media (max-width: 968px) {
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⚡ Future vs CompletableFuture</h1>
+    <p class="subtitle">Interactive Visual Demo for Java Concurrency</p>
+
+    <div class="comparison-container">
+        <!-- FUTURE DEMO -->
+        <div class="demo-section future">
+            <h2 class="section-title future">🔴 Traditional Future (Blocking)</h2>
+            <div class="description">
+                <span class="badge blocking">BLOCKING</span>
+                <p><strong>Problem:</strong> When you call <code>future.get()</code>, the main thread <strong>STOPS</strong> and waits. It can't do anything else until the task completes!</p>
+            </div>
+
+            <div class="visual-demo">
+                <div class="thread">
+                    <span class="thread-label">Main Thread:</span>
+                    <div class="thread-track">
+                        <div id="future-main-thread" class="thread-indicator" style="width: 0%;">Ready</div>
+                    </div>
+                </div>
+                <div class="thread">
+                    <span class="thread-label">Worker Task:</span>
+                    <div class="thread-track">
+                        <div id="future-worker-thread" class="thread-indicator" style="width: 0%;">Idle</div>
+                    </div>
+                </div>
+
+                <div class="console" id="future-console">
+                    <div class="console-line info">📋 Click "Run Future Demo" to start...</div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <button class="btn btn-future" onclick="runFutureDemo()">▶️ Run Future Demo</button>
+            </div>
+        </div>
+
+        <!-- COMPLETABLE FUTURE DEMO -->
+        <div class="demo-section completable">
+            <h2 class="section-title completable">🟢 CompletableFuture (Non-Blocking)</h2>
+            <div class="description">
+                <span class="badge non-blocking">NON-BLOCKING</span>
+                <p><strong>Solution:</strong> The main thread stays <strong>FREE</strong> and continues working. A callback handles the result when ready!</p>
+            </div>
+
+            <div class="visual-demo">
+                <div class="thread">
+                    <span class="thread-label">Main Thread:</span>
+                    <div class="thread-track">
+                        <div id="cf-main-thread" class="thread-indicator" style="width: 0%;">Ready</div>
+                    </div>
+                </div>
+                <div class="thread">
+                    <span class="thread-label">Worker Task:</span>
+                    <div class="thread-track">
+                        <div id="cf-worker-thread" class="thread-indicator" style="width: 0%;">Idle</div>
+                    </div>
+                </div>
+
+                <div class="console" id="cf-console">
+                    <div class="console-line info">📋 Click "Run CompletableFuture Demo" to start...</div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <button class="btn btn-completable" onclick="runCompletableFutureDemo()">▶️ Run CompletableFuture Demo</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <button class="btn btn-reset" onclick="resetAll()">🔄 Reset All</button>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <table class="comparison-table">
+        <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Future</th>
+            <th>CompletableFuture</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Blocking Behavior</td>
+            <td>❌ Blocks main thread with .get()</td>
+            <td>✅ Non-blocking, main thread stays free</td>
+        </tr>
+        <tr>
+            <td>Callbacks</td>
+            <td>❌ No callback support</td>
+            <td>✅ thenAccept(), thenApply(), etc.</td>
+        </tr>
+        <tr>
+            <td>Task Chaining</td>
+            <td>❌ Cannot chain tasks</td>
+            <td>✅ Chain multiple operations easily</td>
+        </tr>
+        <tr>
+            <td>Combining Tasks</td>
+            <td>❌ Manual combination needed</td>
+            <td>✅ thenCombine(), allOf(), anyOf()</td>
+        </tr>
+        <tr>
+            <td>Exception Handling</td>
+            <td>⚠️ Try-catch blocks only</td>
+            <td>✅ exceptionally(), handle() methods</td>
+        </tr>
+        <tr>
+            <td>Executor Requirement</td>
+            <td>✅ Must create ExecutorService</td>
+            <td>✅ Uses ForkJoinPool by default</td>
+        </tr>
+        <tr>
+            <td>Use Case</td>
+            <td>Simple async tasks</td>
+            <td>Complex async workflows</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- KEY CONCEPTS -->
+    <div class="key-concepts">
+        <div class="concept-card">
+            <h3>🔴 Blocking Problem</h3>
+            <p>With Future, calling <code>.get()</code> makes the main thread wait. It's like standing in line at a coffee shop - you can't do anything else until you get your order!</p>
+        </div>
+
+        <div class="concept-card">
+            <h3>🟢 Non-Blocking Solution</h3>
+            <p>CompletableFuture lets you order coffee and then continue working. When your coffee is ready, someone brings it to you (callback). You didn't waste time waiting!</p>
+        </div>
+
+        <div class="concept-card">
+            <h3>⚡ Real-World Usage</h3>
+            <p>Use CompletableFuture for: API calls, database queries, file operations - any task where you don't want to freeze your application while waiting!</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // FUTURE DEMO
+    async function runFutureDemo() {
+        const mainThread = document.getElementById('future-main-thread');
+        const workerThread = document.getElementById('future-worker-thread');
+        const console = document.getElementById('future-console');
+
+        console.innerHTML = '';
+        addConsoleLog(console, '=== Part 1: Traditional Future ===', 'info');
+        addConsoleLog(console, '📌 Submitting task...', 'info');
+
+        await sleep(500);
+
+        // Worker starts
+        addConsoleLog(console, '⚙️  Working on task...', 'work');
+        animateThread(workerThread, 'working', 'Working...', 0, 100, 2000);
+
+        await sleep(500);
+
+        // Main thread BLOCKS
+        addConsoleLog(console, '⏸️  Main thread is BLOCKED - waiting for result...', 'error');
+        mainThread.classList.add('blocked');
+        mainThread.style.width = '100%';
+        mainThread.textContent = '⏸️ BLOCKED';
+
+        // Wait for worker to finish
+        await sleep(2000);
+
+        // Worker completes
+        workerThread.textContent = '✅ Done';
+        workerThread.classList.remove('working');
+        workerThread.classList.add('active');
+
+        await sleep(500);
+
+        // Main thread unblocks
+        addConsoleLog(console, '✅ Got result: Task completed!', 'success');
+        mainThread.classList.remove('blocked');
+        mainThread.classList.add('active');
+        mainThread.textContent = '✅ Got Result';
+
+        await sleep(500);
+        addConsoleLog(console, '❌ Problem: Main thread couldn\'t do anything else!', 'error');
+    }
+
+    // COMPLETABLE FUTURE DEMO
+    async function runCompletableFutureDemo() {
+        const mainThread = document.getElementById('cf-main-thread');
+        const workerThread = document.getElementById('cf-worker-thread');
+        const console = document.getElementById('cf-console');
+
+        console.innerHTML = '';
+        addConsoleLog(console, '=== Part 2: CompletableFuture ===', 'info');
+        addConsoleLog(console, '📌 Starting async task...', 'info');
+
+        await sleep(500);
+
+        // Worker starts
+        addConsoleLog(console, '⚙️  Working on task...', 'work');
+        animateThread(workerThread, 'working', 'Working...', 0, 100, 2000);
+
+        await sleep(300);
+
+        // Main thread is FREE
+        addConsoleLog(console, '⚡ Main thread is FREE! Can do other work...', 'success');
+        mainThread.classList.add('active');
+
+        // Animate main thread doing work
+        animateThreadMultiple(mainThread, 'active', [
+            { text: '💼 Working...', width: 30, duration: 400 },
+            { text: '💼 Still working...', width: 60, duration: 400 },
+            { text: '💼 More work...', width: 90, duration: 400 }
+        ]);
+
+        await sleep(500);
+        addConsoleLog(console, '💼 Doing other work...', 'success');
+        await sleep(500);
+        addConsoleLog(console, '💼 Still doing other work...', 'success');
+
+        // Wait for worker to finish
+        await sleep(800);
+
+        // Worker completes
+        workerThread.textContent = '✅ Done';
+        workerThread.classList.remove('working');
+        workerThread.classList.add('active');
+
+        await sleep(500);
+
+        // Callback executes
+        addConsoleLog(console, '✅ Got result in callback: Task completed!', 'success');
+
+        await sleep(500);
+        addConsoleLog(console, '✅ Advantage: Main thread stayed active!', 'success');
+    }
+
+    // HELPER FUNCTIONS
+    function addConsoleLog(consoleEl, message, type) {
+        const line = document.createElement('div');
+        line.className = `console-line ${type}`;
+        line.textContent = message;
+        consoleEl.appendChild(line);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    function animateThread(element, className, text, startWidth, endWidth, duration) {
+        element.className = `thread-indicator ${className}`;
+        element.style.width = startWidth + '%';
+        element.textContent = text;
+
+        setTimeout(() => {
+            element.style.width = endWidth + '%';
+        }, 50);
+    }
+
+    async function animateThreadMultiple(element, className, steps) {
+        for (const step of steps) {
+            element.className = `thread-indicator ${className}`;
+            element.textContent = step.text;
+            element.style.width = step.width + '%';
+            await sleep(step.duration);
+        }
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function resetAll() {
+        // Reset Future demo
+        document.getElementById('future-main-thread').style.width = '0%';
+        document.getElementById('future-main-thread').textContent = 'Ready';
+        document.getElementById('future-main-thread').className = 'thread-indicator';
+
+        document.getElementById('future-worker-thread').style.width = '0%';
+        document.getElementById('future-worker-thread').textContent = 'Idle';
+        document.getElementById('future-worker-thread').className = 'thread-indicator';
+
+        document.getElementById('future-console').innerHTML = '<div class="console-line info">📋 Click "Run Future Demo" to start...</div>';
+
+        // Reset CompletableFuture demo
+        document.getElementById('cf-main-thread').style.width = '0%';
+        document.getElementById('cf-main-thread').textContent = 'Ready';
+        document.getElementById('cf-main-thread').className = 'thread-indicator';
+
+        document.getElementById('cf-worker-thread').style.width = '0%';
+        document.getElementById('cf-worker-thread').textContent = 'Idle';
+        document.getElementById('cf-worker-thread').className = 'thread-indicator';
+
+        document.getElementById('cf-console').innerHTML = '<div class="console-line info">📋 Click "Run CompletableFuture Demo" to start...</div>';
+    }
+</script>
+</body>
+</html>
