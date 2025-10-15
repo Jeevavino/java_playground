@@ -32,6 +32,8 @@ public class CompletableFutureEssentialDemo {
             return "Hello World";
         });
 
+
+
         System.out.println("✅ Result: " + future.join());
         System.out.println();
     }

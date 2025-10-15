@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wait/Notify vs Lock/Condition - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 3px solid #f093fb;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #e0e0e0;
+            border: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #333;
+        }
+
+        .tab:hover {
+            background: #d0d0d0;
+        }
+
+        .tab.active {
+            background: white;
+            color: #f093fb;
+            border-bottom: 3px solid #f093fb;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.5s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .concept-box {
+            background: #fff0f6;
+            border-left: 5px solid #f093fb;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .concept-box h3 {
+            color: #f093fb;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .concept-box p {
+            line-height: 1.8;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        .demo-section {
+            margin: 30px 0;
+            padding: 25px;
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+        }
+
+        .demo-section h3 {
+            color: #f5576c;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .producer-consumer-visual {
+            display: flex;
+            gap: 30px;
+            margin: 30px 0;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .thread-visual {
+            flex: 1;
+            padding: 20px;
+            border: 3px solid #f093fb;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #fff0f6 0%, #ffffff 100%);
+            min-height: 250px;
+        }
+
+        .thread-visual h4 {
+            color: #f093fb;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+
+        .shared-resource {
+            background: #f5576c;
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 200px;
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+        }
+
+        .shared-resource h4 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .data-display {
+            background: white;
+            color: #f5576c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .status-box {
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        .status-waiting {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .status-working {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .status-notified {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .code-block .keyword {
+            color: #569cd6;
+        }
+
+        .code-block .string {
+            color: #ce9178;
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        .code-block .method {
+            color: #dcdcaa;
+        }
+
+        .code-block .type {
+            color: #4ec9b0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .comparison-table th {
+            background: #f093fb;
+            color: white;
+            font-weight: bold;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #fff0f6;
+        }
+
+        .highlight-box {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight-box strong {
+            color: #155724;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .warning-box strong {
+            color: #856404;
+        }
+
+        .method-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s;
+        }
+
+        .method-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #f093fb;
+        }
+
+        .method-card h4 {
+            color: #f093fb;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .method-signature {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        ul li {
+            margin: 8px 0;
+        }
+
+        .flow-diagram {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .flow-step {
+            background: white;
+            border-left: 4px solid #f093fb;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .flow-step:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            background: #f093fb;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔄 Thread Communication</h1>
+        <p>Understanding wait/notify and Lock/Condition</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab(0)">
+            📚 Wait & Notify Basics
+        </button>
+        <button class="tab" onclick="switchTab(1)">
+            🔄 Producer-Consumer
+        </button>
+        <button class="tab" onclick="switchTab(2)">
+            🚀 Lock & Condition
+        </button>
+    </div>
+
+    <!-- TAB 1: Wait & Notify Basics -->
+    <div class="tab-content active" id="tab0">
+        <h2 style="color: #f093fb; margin-bottom: 20px;">Understanding wait() and notify()</h2>
+
+        <div class="concept-box">
+            <h3>🔒 What is wait()?</h3>
+            <p>
+                The wait() method causes the current thread to wait until another thread invokes notify() or notifyAll()
+                on the same object. When wait() is called, the thread <strong>releases the lock</strong> it holds and
+                enters a waiting state. This prevents deadlock and allows other threads to acquire the lock.
+            </p>
+        </div>
+
+        <div class="concept-box">
+            <h3>🔔 What is notify()?</h3>
+            <p>
+                The notify() method wakes up a single thread that is waiting on the object's monitor (lock).
+                The awakened thread will not be able to proceed until the current thread relinquishes the lock.
+                There's also notifyAll() which wakes up all waiting threads.
+            </p>
+        </div>
+
+        <div class="demo-section">
+            <h3>Key Rules for wait() and notify()</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="step-number">1</span>
+                    <strong>Must be called inside synchronized block/method</strong> - Otherwise throws IllegalMonitorStateException
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">2</span>
+                    <strong>wait() releases the lock</strong> - Allows other threads to enter synchronized block
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">3</span>
+                    <strong>Always use while loop</strong> - Prevents spurious wakeups (thread wakes up without notify)
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">4</span>
+                    <strong>notify() doesn't release lock immediately</strong> - Waiting thread gets lock after current thread exits synchronized block
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">5</span>
+                    <strong>Both methods throw InterruptedException</strong> - Must be handled with try-catch
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Method Signatures</h3>
+
+            <div class="method-card">
+                <h4>wait()</h4>
+                <div class="method-signature">public final void wait() throws InterruptedException</div>
+                <p>Causes current thread to wait until another thread invokes notify() or notifyAll().</p>
+            </div>
+
+            <div class="method-card">
+                <h4>wait(long timeout)</h4>
+                <div class="method-signature">public final void wait(long timeout) throws InterruptedException</div>
+                <p>Waits for specified milliseconds or until notified.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>notify()</h4>
+                <div class="method-signature">public final void notify()</div>
+                <p>Wakes up a single waiting thread.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>notifyAll()</h4>
+                <div class="method-signature">public final void notifyAll()</div>
+                <p>Wakes up all waiting threads.</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Simple Example</h3>
+            <div class="code-block">
+                <span class="keyword">class</span> <span class="type">Demo</span> {
+                <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="method">waitingMethod</span>() {
+                <span class="keyword">while</span> (!condition) {
+                <span class="keyword">try</span> {
+                <span class="method">wait</span>(); <span class="comment">// Releases lock and waits</span>
+                } <span class="keyword">catch</span> (InterruptedException e) {
+                Thread.<span class="method">currentThread</span>().<span class="method">interrupt</span>();
+                }
+                }
+                <span class="comment">// Continue after being notified</span>
+                }
+
+                <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="method">notifyingMethod</span>() {
+                condition = <span class="keyword">true</span>;
+                <span class="method">notify</span>(); <span class="comment">// Wake up waiting thread</span>
+                }
+                }
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ Common Mistake:</strong> Always use <code>while(!condition)</code> instead of <code>if(!condition)</code>
+            with wait(). This protects against spurious wakeups where a thread can wake up without being notified.
+        </div>
+    </div>
+
+    <!-- TAB 2: Producer-Consumer with wait/notify -->
+    <div class="tab-content" id="tab1">
+        <h2 style="color: #f093fb; margin-bottom: 20px;">Producer-Consumer Pattern with wait/notify</h2>
+
+        <div class="concept-box">
+            <h3>🏭 The Producer-Consumer Problem</h3>
+            <p>
+                A classic concurrency problem where one or more producer threads generate data and place it in a buffer,
+                while one or more consumer threads retrieve and process data from the buffer. The challenge is to ensure
+                that producers don't try to add data when the buffer is full, and consumers don't try to remove data
+                when the buffer is empty.
+            </p>
+        </div>
+
+        <div class="demo-section">
+            <h3>Visual Representation</h3>
+            <div class="producer-consumer-visual">
+                <div class="thread-visual">
+                    <h4>👨‍🏭 Producer</h4>
+                    <div id="producer-status"></div>
+                </div>
+
+                <div class="shared-resource">
+                    <h4>Shared Resource</h4>
+                    <div class="data-display" id="shared-data">No Data</div>
+                    <div style="margin-top: 10px; font-size: 0.9em;">
+                        <div id="has-data-flag">hasData: false</div>
+                    </div>
+                </div>
+
+                <div class="thread-visual">
+                    <h4>👨‍💼 Consumer</h4>
+                    <div id="consumer-status"></div>
+                </div>
+            </div>
+            <button class="btn" onclick="demonstrateProducerConsumer()">Run Producer-Consumer Demo</button>
+        </div>
+
+        <div class="demo-section">
+            <h3>Code Walkthrough - SharedResource</h3>
+            <div class="code-block">
+                <span class="keyword">class</span> <span class="type">SharedResource</span> {
+                <span class="keyword">private</span> String data;
+                <span class="keyword">private</span> <span class="keyword">boolean</span> hasData = <span class="keyword">false</span>;
+
+                <span class="comment">// Consumer waits for data to be available</span>
+                <span class="keyword">public</span> <span class="keyword">synchronized</span> String <span class="method">consume</span>() {
+                <span class="keyword">while</span> (!hasData) { <span class="comment">// Use WHILE, not IF!</span>
+                <span class="keyword">try</span> {
+                System.out.<span class="method">println</span>(<span class="string">"Consumer waiting..."</span>);
+                <span class="method">wait</span>(); <span class="comment">// Release lock and wait</span>
+                } <span class="keyword">catch</span> (InterruptedException e) {
+                Thread.<span class="method">currentThread</span>().<span class="method">interrupt</span>();
+                <span class="keyword">return</span> <span class="keyword">null</span>;
+                }
+                }
+
+                String result = data;
+                hasData = <span class="keyword">false</span>; <span class="comment">// Mark as consumed</span>
+                System.out.<span class="method">println</span>(<span class="string">"Consumer consumed: "</span> + result);
+                <span class="method">notify</span>(); <span class="comment">// Wake up producer</span>
+                <span class="keyword">return</span> result;
+                }
+
+                <span class="comment">// Producer waits for space to be available</span>
+                <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="method">produce</span>(String newData) {
+                <span class="keyword">while</span> (hasData) { <span class="comment">// Wait until consumed</span>
+                <span class="keyword">try</span> {
+                System.out.<span class="method">println</span>(<span class="string">"Producer waiting..."</span>);
+                <span class="method">wait</span>(); <span class="comment">// Release lock and wait</span>
+                } <span class="keyword">catch</span> (InterruptedException e) {
+                Thread.<span class="method">currentThread</span>().<span class="method">interrupt</span>();
+                <span class="keyword">return</span>;
+                }
+                }
+
+                <span class="keyword">this</span>.data = newData;
+                hasData = <span class="keyword">true</span>; <span class="comment">// Mark as available</span>
+                System.out.<span class="method">println</span>(<span class="string">"Producer produced: "</span> + newData);
+                <span class="method">notify</span>(); <span class="comment">// Wake up consumer</span>
+                }
+                }
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Execution Flow</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="step-number">1</span>
+                    <strong>Consumer starts first</strong> - Calls consume(), finds hasData=false
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">2</span>
+                    <strong>Consumer calls wait()</strong> - Releases lock and enters waiting state
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">3</span>
+                    <strong>Producer acquires lock</strong> - Calls produce("Data-1")
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">4</span>
+                    <strong>Producer sets data</strong> - hasData=true, calls notify()
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">5</span>
+                    <strong>Producer exits synchronized</strong> - Releases lock
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">6</span>
+                    <strong>Consumer wakes up</strong> - Re-acquires lock, exits while loop
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">7</span>
+                    <strong>Consumer gets data</strong> - Sets hasData=false, calls notify()
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">8</span>
+                    <strong>Cycle repeats</strong> - Producer and Consumer coordinate
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>✅ Key Benefit:</strong> wait() and notify() enable threads to communicate and coordinate
+            without busy-waiting (polling). This saves CPU resources and ensures proper synchronization.
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ Limitation:</strong> With wait()/notify(), you can only wait on one condition at a time.
+            If you have multiple conditions, all threads wake up on notify() and must check their conditions again.
+        </div>
+    </div>
+
+    <!-- TAB 3: Lock & Condition -->
+    <div class="tab-content" id="tab2">
+        <h2 style="color: #f093fb; margin-bottom: 20px;">Lock & Condition - Modern Alternative</h2>
+
+        <div class="concept-box">
+            <h3>🚀 What are Lock and Condition?</h3>
+            <p>
+                Lock and Condition are modern alternatives to synchronized and wait/notify, introduced in Java 5.
+                <strong>ReentrantLock</strong> replaces synchronized blocks, and <strong>Condition</strong> replaces
+                wait() and notify(). The key advantage is you can have <strong>multiple Condition objects</strong>
+                per lock, allowing more precise thread coordination.
+            </p>
+        </div>
+
+        <div class="demo-section">
+            <h3>Your Code - SharedResourceWithLock</h3>
+            <div class="code-block">
+                <span class="keyword">class</span> <span class="type">SharedResourceWithLock</span> {
+                <span class="comment">// Step 1: Create a ReentrantLock</span>
+                <span class="keyword">private</span> <span class="keyword">final</span> ReentrantLock lock = <span class="keyword">new</span> <span class="type">ReentrantLock</span>();
+
+                <span class="comment">// Step 2: Create TWO separate conditions from the same lock!</span>
+                <span class="keyword">private</span> <span class="keyword">final</span> Condition dataAvailable = lock.<span class="method">newCondition</span>();
+                <span class="keyword">private</span> <span class="keyword">final</span> Condition spaceAvailable = lock.<span class="method">newCondition</span>();
+
+                <span class="keyword">private</span> String data;
+                <span class="keyword">private</span> <span class="keyword">boolean</span> hasData = <span class="keyword">false</span>;
+
+                <span class="keyword">public</span> String <span class="method">consume</span>() {
+                lock.<span class="method">lock</span>(); <span class="comment">// Acquire lock (replaces synchronized)</span>
+                <span class="keyword">try</span> {
+                <span class="keyword">while</span> (!hasData) {
+                dataAvailable.<span class="method">await</span>(); <span class="comment">// Wait on specific condition (replaces wait())</span>
+                }
+                String result = data;
+                hasData = <span class="keyword">false</span>;
+                spaceAvailable.<span class="method">signal</span>(); <span class="comment">// Signal producer (replaces notify())</span>
+                <span class="keyword">return</span> result;
+                } <span class="keyword">catch</span> (InterruptedException e) {
+                Thread.<span class="method">currentThread</span>().<span class="method">interrupt</span>();
+                <span class="keyword">return</span> <span class="keyword">null</span>;
+                } <span class="keyword">finally</span> {
+                lock.<span class="method">unlock</span>(); <span class="comment">// MUST unlock in finally block!</span>
+                }
+                }
+
+                <span class="keyword">public</span> <span class="keyword">void</span> <span class="method">produce</span>(String newData) {
+                lock.<span class="method">lock</span>(); <span class="comment">// Acquire lock</span>
+                <span class="keyword">try</span> {
+                <span class="keyword">while</span> (hasData) {
+                spaceAvailable.<span class="method">await</span>(); <span class="comment">// Wait on specific condition</span>
+                }
+                <span class="keyword">this</span>.data = newData;
+                hasData = <span class="keyword">true</span>;
+                dataAvailable.<span class="method">signal</span>(); <span class="comment">// Signal consumer</span>
+                } <span class="keyword">catch</span> (InterruptedException e) {
+                Thread.<span class="method">currentThread</span>().<span class="method">interrupt</span>();
+                } <span class="keyword">finally</span> {
+                lock.<span class="method">unlock</span>(); <span class="comment">// MUST unlock in finally!</span>
+                }
+                }
+                }
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Key Differences from synchronized/wait/notify</h3>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>synchronized + wait/notify</th>
+                    <th>Lock + Condition (Your Code)</th>
+                </tr>
+                <tr>
+                    <td><strong>Lock Acquisition</strong></td>
+                    <td>synchronized (automatic)</td>
+                    <td>lock.lock() (explicit)</td>
+                </tr>
+                <tr>
+                    <td><strong>Lock Release</strong></td>
+                    <td>Automatic when block exits</td>
+                    <td>lock.unlock() in finally</td>
+                </tr>
+                <tr>
+                    <td><strong>Wait Method</strong></td>
+                    <td>wait()</td>
+                    <td>condition.await()</td>
+                </tr>
+                <tr>
+                    <td><strong>Notify Method</strong></td>
+                    <td>notify()</td>
+                    <td>condition.signal()</td>
+                </tr>
+                <tr>
+                    <td><strong>Number of Conditions</strong></td>
+                    <td>❌ Only ONE wait set</td>
+                    <td>✅ MULTIPLE conditions</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="demo-section">
+            <h3>The Power: Multiple Conditions</h3>
+
+            <div class="concept-box">
+                <h3>🎯 Why Two Conditions?</h3>
+                <p>
+                    Your code creates <strong>two separate conditions</strong>:
+                </p>
+                <ul>
+                    <li><strong>dataAvailable</strong> - Consumer waits on this when no data exists</li>
+                    <li><strong>spaceAvailable</strong> - Producer waits on this when data already exists</li>
+                </ul>
+                <p style="margin-top: 15px;">
+                    This allows you to wake up the <strong>exact thread</strong> that needs to be woken up,
+                    instead of waking all threads like with notify().
+                </p>
+            </div>
+
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="step-number">1</span>
+                    <strong>Consumer calls consume()</strong> - No data available, so await() on dataAvailable condition
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">2</span>
+                    <strong>Producer calls produce()</strong> - Sets data, then signal() on dataAvailable
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">3</span>
+                    <strong>Only Consumer wakes up!</strong> - Because signal was on dataAvailable condition
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">4</span>
+                    <strong>Consumer finishes</strong> - Clears data, then signal() on spaceAvailable
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">5</span>
+                    <strong>Only Producer wakes up!</strong> - Because signal was on spaceAvailable condition
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Method Mapping</h3>
+
+            <div class="method-card">
+                <h4>lock.lock()</h4>
+                <div class="method-signature">void lock()</div>
+                <p>Acquires the lock. Replaces entering a synchronized block.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>lock.unlock()</h4>
+                <div class="method-signature">void unlock()</div>
+                <p>Releases the lock. <strong>Must be in finally block!</strong> Replaces exiting synchronized block.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>lock.newCondition()</h4>
+                <div class="method-signature">Condition newCondition()</div>
+                <p>Creates a new Condition bound to this lock. You created two: dataAvailable and spaceAvailable.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>condition.await()</h4>
+                <div class="method-signature">void await() throws InterruptedException</div>
+                <p>Replaces wait(). Releases lock and waits until signaled.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>condition.signal()</h4>
+                <div class="method-signature">void signal()</div>
+                <p>Replaces notify(). Wakes up one thread waiting on THIS specific condition.</p>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ Critical Rule:</strong> You MUST call unlock() in a finally block! If you don't, and an exception
+            occurs, the lock will never be released and your program will deadlock.
+        </div>
+
+        <div class="highlight-box">
+            <strong>🎯 Summary:</strong> Lock and Condition provide the same functionality as synchronized and wait/notify,
+            but with one major advantage: <strong>multiple condition variables</strong>. In your code, dataAvailable and
+            spaceAvailable let you precisely control which thread wakes up, making coordination more efficient.
+        </div>
+
+        <div class="demo-section">
+            <h3>Side-by-Side Comparison</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4 style="color: #f5576c;">Old Way (wait/notify)</h4>
+                    <div class="code-block" style="font-size: 0.85em;">
+                        <span class="keyword">synchronized</span> String <span class="method">consume</span>() {
+                        <span class="keyword">while</span> (!hasData) {
+                        <span class="method">wait</span>();
+                        }
+                        String result = data;
+                        hasData = <span class="keyword">false</span>;
+                        <span class="method">notify</span>(); <span class="comment">// Wakes ANY waiting thread</span>
+                        <span class="keyword">return</span> result;
+                        }
+                    </div>
+                </div>
+                <div>
+                    <h4 style="color: #28a745;">New Way (Lock/Condition)</h4>
+                    <div class="code-block" style="font-size: 0.85em;">
+                        String <span class="method">consume</span>() {
+                        lock.<span class="method">lock</span>();
+                        <span class="keyword">try</span> {
+                        <span class="keyword">while</span> (!hasData) {
+                        dataAvailable.<span class="method">await</span>();
+                        }
+                        String result = data;
+                        hasData = <span class="keyword">false</span>;
+                        spaceAvailable.<span class="method">signal</span>(); <span class="comment">// Wakes PRODUCER specifically</span>
+                        <span class="keyword">return</span> result;
+                        } <span class="keyword">finally</span> {
+                        lock.<span class="method">unlock</span>();
+                        }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(index) {
+        const tabs = document.querySelectorAll('.tab');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => tab.classList.remove('active'));
+        contents.forEach(content => content.classList.remove('active'));
+
+        tabs[index].classList.add('active');
+        contents[index].classList.add('active');
+    }
+
+    async function demonstrateProducerConsumer() {
+        const producerStatus = document.getElementById('producer-status');
+        const consumerStatus = document.getElementById('consumer-status');
+        const sharedData = document.getElementById('shared-data');
+        const hasDataFlag = document.getElementById('has-data-flag');
+
+        producerStatus.innerHTML = '';
+        consumerStatus.innerHTML = '';
+
+        // Initial state
+        addStatus(consumerStatus, 'Consumer starts', 'status-working');
+        await sleep(500);
+
+        addStatus(consumerStatus, 'hasData=false, calling wait()', 'status-waiting');
+        await sleep(1000);
+
+        addStatus(producerStatus, 'Producer starts', 'status-working');
+        await sleep(500);
+
+        // Producer produces
+        addStatus(producerStatus, 'Producing Data-1', 'status-working');
+        await sleep(800);
+
+        sharedData.textContent = 'Data-1';
+        hasDataFlag.textContent = 'hasData: true';
+        addStatus(producerStatus, 'Set hasData=true', 'status-working');
+        await sleep(500);
+
+        addStatus(producerStatus, 'Calling notify()', 'status-notified');
+        await sleep(500);
+
+        // Consumer wakes up
+        addStatus(consumerStatus, 'Woken up by notify()', 'status-notified');
+        await sleep(500);
+
+        addStatus(consumerStatus, 'Re-acquired lock', 'status-working');
+        await sleep(500);
+
+        addStatus(consumerStatus, 'Consuming Data-1', 'status-working');
+        await sleep(500);
+
+        sharedData.textContent = 'No Data';
+        hasDataFlag.textContent = 'hasData: false';
+        addStatus(consumerStatus, 'Set hasData=false', 'status-working');
+        await sleep(500);
+
+        addStatus(consumerStatus, 'Calling notify()', 'status-notified');
+        await sleep(500);
+
+        // Second cycle
+        addStatus(producerStatus, 'Woken up, producing Data-2', 'status-working');
+        await sleep(800);
+
+        sharedData.textContent = 'Data-2';
+        hasDataFlag.textContent = 'hasData: true';
+        addStatus(producerStatus, 'Data-2 ready, notify()', 'status-notified');
+    }
+
+    function addStatus(container, text, className) {
+        const div = document.createElement('div');
+        div.className = `status-box ${className}`;
+        div.textContent = text;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+</script>
+</body>
+</html>

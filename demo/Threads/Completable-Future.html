@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future vs CompletableFuture - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #e0e0e0;
+            border: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            color: #333;
+        }
+
+        .tab:hover {
+            background: #d0d0d0;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.5s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .concept-box {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .concept-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .concept-box p {
+            line-height: 1.8;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        .demo-section {
+            margin: 30px 0;
+            padding: 25px;
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+        }
+
+        .demo-section h3 {
+            color: #764ba2;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .visual-demo {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .thread-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 20px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: #f0f4ff;
+        }
+
+        .thread-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .thread-status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.95em;
+        }
+
+        .status-running {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .status-blocked {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+
+        .status-free {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .status-completed {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .code-block .keyword {
+            color: #569cd6;
+        }
+
+        .code-block .string {
+            color: #ce9178;
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        .code-block .method {
+            color: #dcdcaa;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            padding: 15px 0;
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .timeline-item.show {
+            opacity: 1;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight-box strong {
+            color: #856404;
+        }
+
+        .method-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s;
+        }
+
+        .method-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .method-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .method-signature {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        ul li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚀 Future vs CompletableFuture</h1>
+        <p>Understanding Asynchronous Programming in Java</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab(0)">
+            📚 Blocking vs Async
+        </button>
+        <button class="tab" onclick="switchTab(1)">
+            ⏳ Future Interface
+        </button>
+        <button class="tab" onclick="switchTab(2)">
+            ⚡ CompletableFuture
+        </button>
+    </div>
+
+    <!-- TAB 1: Blocking vs Async -->
+    <div class="tab-content active" id="tab0">
+        <h2 style="color: #667eea; margin-bottom: 20px;">Understanding Blocking vs Asynchronous Programming</h2>
+
+        <div class="concept-box">
+            <h3>🔒 What is Synchronous (Blocking)?</h3>
+            <p>
+                Blocking means the program stops and waits for a task to complete before moving to the next line of code.
+                The thread is "blocked" and cannot do anything else until the operation finishes.
+            </p>
+        </div>
+
+        <div class="concept-box">
+            <h3>⚡ What is Asynchronous (Non-Blocking)?</h3>
+            <p>
+                Asynchronous means the program starts a task and immediately continues executing other code without waiting.
+                When the task completes, it notifies the program through a callback or other mechanism.
+            </p>
+        </div>
+
+        <div class="demo-section">
+            <h3>Visual Comparison</h3>
+
+            <div class="visual-demo">
+                <div class="thread-box">
+                    <h4>🔒 Blocking Approach</h4>
+                    <div id="blocking-demo"></div>
+                    <button class="btn" onclick="demonstrateBlocking()">Run Blocking Demo</button>
+                </div>
+
+                <div class="thread-box">
+                    <h4>⚡ Async Approach</h4>
+                    <div id="async-demo"></div>
+                    <button class="btn" onclick="demonstrateAsync()">Run Async Demo</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Real-World Analogy</h3>
+            <table class="comparison-table">
+                <tr>
+                    <th>Scenario</th>
+                    <th>Blocking (Synchronous)</th>
+                    <th>Async (Non-Blocking)</th>
+                </tr>
+                <tr>
+                    <td><strong>Restaurant Order</strong></td>
+                    <td>You wait at the counter until your food is ready. You can't do anything else.</td>
+                    <td>You get a buzzer, sit down, check your phone, and are notified when food is ready.</td>
+                </tr>
+                <tr>
+                    <td><strong>Washing Machine</strong></td>
+                    <td>You stand and watch the machine until it finishes.</td>
+                    <td>You start the machine and do other chores, it beeps when done.</td>
+                </tr>
+                <tr>
+                    <td><strong>File Download</strong></td>
+                    <td>Browser freezes until download completes.</td>
+                    <td>Download happens in background, you can browse other sites.</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="highlight-box">
+            <strong>Key Takeaway:</strong> Blocking wastes resources by keeping threads idle. Async programming allows better resource utilization by letting threads do other work while waiting for operations to complete.
+        </div>
+    </div>
+
+    <!-- TAB 2: Future Interface -->
+    <div class="tab-content" id="tab1">
+        <h2 style="color: #667eea; margin-bottom: 20px;">The Future Interface - Traditional Async Approach</h2>
+
+        <div class="concept-box">
+            <h3>🎯 What is Future?</h3>
+            <p>
+                Future is an interface in java.util.concurrent that represents the result of an asynchronous computation.
+                When you submit a task to an ExecutorService, it returns a Future object that acts as a "token" or "promise"
+                for the eventual result.
+            </p>
+        </div>
+
+        <div class="demo-section">
+            <h3>Future Methods</h3>
+
+            <div class="method-card">
+                <h4>get()</h4>
+                <div class="method-signature">V get() throws InterruptedException, ExecutionException</div>
+                <p>Waits (BLOCKS) if necessary for the computation to complete, then retrieves its result.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>get(timeout, unit)</h4>
+                <div class="method-signature">V get(long timeout, TimeUnit unit)</div>
+                <p>Waits for at most the given time for the computation to complete. Throws TimeoutException if time expires.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>isDone()</h4>
+                <div class="method-signature">boolean isDone()</div>
+                <p>Returns true if the task completed (successfully or with exception).</p>
+            </div>
+
+            <div class="method-card">
+                <h4>cancel(mayInterruptIfRunning)</h4>
+                <div class="method-signature">boolean cancel(boolean mayInterruptIfRunning)</div>
+                <p>Attempts to cancel execution of this task.</p>
+            </div>
+
+            <div class="method-card">
+                <h4>isCancelled()</h4>
+                <div class="method-signature">boolean isCancelled()</div>
+                <p>Returns true if the task was cancelled before it completed normally.</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Code Example from Your Program</h3>
+            <div class="code-block">
+                <span class="comment">// Create thread pool</span>
+                ExecutorService executor = Executors.<span class="method">newFixedThreadPool</span>(<span class="string">2</span>);
+
+                <span class="comment">// Submit task and get Future</span>
+                Future&lt;String&gt; future = executor.<span class="method">submit</span>(() -&gt; {
+                System.out.<span class="method">println</span>(<span class="string">"⚙️ Working on task..."</span>);
+                Thread.<span class="method">sleep</span>(<span class="string">2000</span>); <span class="comment">// Simulate work</span>
+                <span class="keyword">return</span> <span class="string">"Task completed!"</span>;
+                });
+
+                System.out.<span class="method">println</span>(<span class="string">"⏸️ Main thread is BLOCKED..."</span>);
+
+                <span class="comment">// This BLOCKS the main thread!</span>
+                String result = future.<span class="method">get</span>(); <span class="comment">// ⏸️ Waiting here...</span>
+
+                System.out.<span class="method">println</span>(<span class="string">"✅ Got result: "</span> + result);
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Interactive Demo</h3>
+            <div id="future-timeline" class="timeline"></div>
+            <button class="btn" onclick="demonstrateFuture()">Run Future Demo</button>
+        </div>
+
+        <div class="highlight-box">
+            <strong>⚠️ The Problem with Future:</strong> The get() method is BLOCKING! Even though the task runs asynchronously,
+            when you call get(), the main thread stops and waits. You can't chain operations or attach callbacks easily.
+        </div>
+    </div>
+
+    <!-- TAB 3: CompletableFuture -->
+    <div class="tab-content" id="tab2">
+        <h2 style="color: #667eea; margin-bottom: 20px;">CompletableFuture - Modern Async Programming</h2>
+
+        <div class="concept-box">
+            <h3>🚀 What is CompletableFuture?</h3>
+            <p>
+                CompletableFuture is a powerful enhancement to Future introduced in Java 8. It provides a non-blocking,
+                functional approach to asynchronous programming. You can chain operations, combine multiple futures,
+                handle errors, and attach callbacks - all without blocking threads!
+            </p>
+        </div>
+
+        <div class="demo-section">
+            <h3>Key Advantages Over Future</h3>
+            <ul>
+                <li><strong>Non-blocking callbacks:</strong> Use thenAccept, thenApply without blocking</li>
+                <li><strong>Chainable operations:</strong> Transform and combine results functionally</li>
+                <li><strong>Better error handling:</strong> Built-in exception handling with exceptionally</li>
+                <li><strong>Combine multiple futures:</strong> thenCombine, allOf, anyOf methods</li>
+                <li><strong>Manual completion:</strong> You can complete it programmatically</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>Essential CompletableFuture Methods</h3>
+
+            <h4 style="color: #764ba2; margin: 20px 0;">1️⃣ Creation Methods</h4>
+
+            <div class="method-card">
+                <h4>supplyAsync()</h4>
+                <div class="method-signature">CompletableFuture&lt;T&gt; supplyAsync(Supplier&lt;T&gt; supplier)</div>
+                <p>Creates and runs an async task that returns a value.</p>
+                <div class="code-block">
+                    CompletableFuture&lt;String&gt; future = CompletableFuture.<span class="method">supplyAsync</span>(() -&gt; {
+                    <span class="keyword">return</span> <span class="string">"Hello World"</span>;
+                    });
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h4>runAsync()</h4>
+                <div class="method-signature">CompletableFuture&lt;Void&gt; runAsync(Runnable runnable)</div>
+                <p>Creates and runs an async task that doesn't return a value.</p>
+            </div>
+
+            <h4 style="color: #764ba2; margin: 20px 0;">2️⃣ Transformation Methods</h4>
+
+            <div class="method-card">
+                <h4>thenApply()</h4>
+                <div class="method-signature">CompletableFuture&lt;U&gt; thenApply(Function&lt;T,U&gt; fn)</div>
+                <p>Transforms the result when it completes (like map in streams).</p>
+                <div class="code-block">
+                    future.<span class="method">thenApply</span>(name -&gt; name.<span class="method">toUpperCase</span>())
+                    .<span class="method">thenApply</span>(upper -&gt; <span class="string">"User_"</span> + upper);
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h4>thenAccept()</h4>
+                <div class="method-signature">CompletableFuture&lt;Void&gt; thenAccept(Consumer&lt;T&gt; action)</div>
+                <p>Consumes the result without returning anything (terminal operation).</p>
+                <div class="code-block">
+                    future.<span class="method">thenAccept</span>(result -&gt; {
+                    System.out.<span class="method">println</span>(<span class="string">"✅ Got: "</span> + result);
+                    });
+                </div>
+            </div>
+
+            <h4 style="color: #764ba2; margin: 20px 0;">3️⃣ Combining Methods</h4>
+
+            <div class="method-card">
+                <h4>thenCombine()</h4>
+                <div class="method-signature">CompletableFuture&lt;V&gt; thenCombine(CompletableFuture&lt;U&gt; other, BiFunction&lt;T,U,V&gt; fn)</div>
+                <p>Combines results of two independent futures.</p>
+                <div class="code-block">
+                    CompletableFuture&lt;String&gt; combined = future1
+                    .<span class="method">thenCombine</span>(future2, (data1, data2) -&gt; {
+                    <span class="keyword">return</span> data1 + <span class="string">" + "</span> + data2;
+                    });
+                </div>
+            </div>
+
+
+            <h4 style="color: #764ba2; margin: 20px 0;">4️⃣ Error Handling</h4>
+
+            <div class="method-card">
+                <h4>exceptionally()</h4>
+                <div class="method-signature">CompletableFuture&lt;T&gt; exceptionally(Function&lt;Throwable,T&gt; fn)</div>
+                <p>Handles exceptions and provides a fallback value.</p>
+                <div class="code-block">
+                    future.<span class="method">exceptionally</span>(throwable -&gt; {
+                    System.out.<span class="method">println</span>(<span class="string">"❌ Error: "</span> + throwable.<span class="method">getMessage</span>());
+                    <span class="keyword">return</span> <span class="string">"Fallback value"</span>;
+                    });
+                </div>
+            </div>
+
+            <div class="method-card">
+                <h4>handle()</h4>
+                <div class="method-signature">CompletableFuture&lt;U&gt; handle(BiFunction&lt;T,Throwable,U&gt; fn)</div>
+                <p>Handles both result and exception (always called, whether success or failure).</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Code Flow from Your Program</h3>
+            <div class="code-block">
+                <span class="comment">// Start async task - returns immediately!</span>
+                CompletableFuture&lt;String&gt; completableFuture = CompletableFuture
+                .<span class="method">supplyAsync</span>(() -&gt; {
+                System.out.<span class="method">println</span>(<span class="string">"⚙️ Working on task..."</span>);
+                Thread.<span class="method">sleep</span>(<span class="string">2000</span>);
+                <span class="keyword">return</span> <span class="string">"Task completed!"</span>;
+                });
+
+                <span class="comment">// Attach callback - doesn't block!</span>
+                completableFuture.<span class="method">thenAccept</span>(result -&gt; {
+                System.out.<span class="method">println</span>(<span class="string">"✅ Got result: "</span> + result);
+                });
+
+                <span class="comment">// Main thread continues immediately!</span>
+                System.out.<span class="method">println</span>(<span class="string">"⚡ Main thread is FREE!"</span>);
+                System.out.<span class="method">println</span>(<span class="string">"💼 Doing other work..."</span>);
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>Interactive Demo</h3>
+            <div id="completable-timeline" class="timeline"></div>
+            <button class="btn" onclick="demonstrateCompletableFuture()">Run CompletableFuture Demo</button>
+        </div>
+
+        <div class="demo-section">
+            <h3>Chaining Example</h3>
+            <div class="code-block">
+                <span class="comment">// Beautiful functional chaining!</span>
+                CompletableFuture.<span class="method">supplyAsync</span>(() -&gt; <span class="string">"john"</span>)
+                .<span class="method">thenApply</span>(name -&gt; name.<span class="method">toUpperCase</span>())       <span class="comment">// Transform</span>
+                .<span class="method">thenApply</span>(upper -&gt; <span class="string">"User_"</span> + upper)          <span class="comment">// Transform again</span>
+                .<span class="method">thenAccept</span>(System.out::println)           <span class="comment">// Consume</span>
+                .<span class="method">exceptionally</span>(ex -&gt; {                      <span class="comment">// Handle errors</span>
+                System.err.<span class="method">println</span>(<span class="string">"Error: "</span> + ex);
+                <span class="keyword">return</span> <span class="keyword">null</span>;
+                });
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>🎯 Summary:</strong> CompletableFuture enables true non-blocking async programming. The main thread stays free,
+            you can chain operations functionally, combine multiple async tasks, and handle errors elegantly - all without
+            explicitly managing threads or blocking!
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching
+    function switchTab(index) {
+        const tabs = document.querySelectorAll('.tab');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => tab.classList.remove('active'));
+        contents.forEach(content => content.classList.remove('active'));
+
+        tabs[index].classList.add('active');
+        contents[index].classList.add('active');
+    }
+
+    // Blocking demo
+    async function demonstrateBlocking() {
+        const container = document.getElementById('blocking-demo');
+        container.innerHTML = '';
+
+        const steps = [
+            { text: '📌 Task submitted', className: 'status-running', delay: 0 },
+            { text: '⏸️ Main thread BLOCKED', className: 'status-blocked', delay: 500 },
+            { text: '⚙️ Working... (2 sec)', className: 'status-running', delay: 1000 },
+            { text: '⏸️ Still blocked...', className: 'status-blocked', delay: 1500 },
+            { text: '⏸️ Still waiting...', className: 'status-blocked', delay: 2000 },
+            { text: '✅ Task completed!', className: 'status-completed', delay: 2500 },
+            { text: '🔓 Main thread unblocked', className: 'status-free', delay: 3000 },
+        ];
+
+        for (const step of steps) {
+            await sleep(step.delay);
+            const div = document.createElement('div');
+            div.className = `thread-status ${step.className}`;
+            div.textContent = step.text;
+            container.appendChild(div);
+        }
+    }
+
+    // Async demo
+    async function demonstrateAsync() {
+        const container = document.getElementById('async-demo');
+        container.innerHTML = '';
+
+        const steps = [
+            { text: '📌 Task started', className: 'status-running', delay: 0 },
+            { text: '⚡ Main thread FREE!', className: 'status-free', delay: 200 },
+            { text: '💼 Doing other work...', className: 'status-free', delay: 600 },
+            { text: '⚙️ Task working in background', className: 'status-running', delay: 1000 },
+            { text: '💼 More work...', className: 'status-free', delay: 1400 },
+            { text: '✅ Task completed!', className: 'status-completed', delay: 2000 },
+            { text: '🔔 Callback executed', className: 'status-completed', delay: 2200 },
+        ];
+
+        for (const step of steps) {
+            await sleep(step.delay);
+            const div = document.createElement('div');
+            div.className = `thread-status ${step.className}`;
+            div.textContent = step.text;
+            container.appendChild(div);
+        }
+    }
+
+    // Future demo
+    async function demonstrateFuture() {
+        const container = document.getElementById('future-timeline');
+        container.innerHTML = '';
+
+        const steps = [
+            { text: '📌 Submitting task to ExecutorService', delay: 0 },
+            { text: '🎫 Received Future<String> object (token for result)', delay: 500 },
+            { text: '⚙️ Task running in background thread...', delay: 1000 },
+            { text: '⏸️ Calling future.get() - MAIN THREAD BLOCKS!', delay: 1500 },
+            { text: '⏳ Waiting for task to complete...', delay: 2000 },
+            { text: '⏳ Still waiting... (task running)', delay: 2500 },
+            { text: '✅ Task completed - get() returns result', delay: 3000 },
+            { text: '🔓 Main thread unblocked, continues execution', delay: 3300 },
+            { text: '❌ Problem: Main thread was idle during wait!', delay: 3600 },
+        ];
+
+        for (const step of steps) {
+            await sleep(step.delay);
+            const div = document.createElement('div');
+            div.className = 'timeline-item';
+            div.textContent = step.text;
+            container.appendChild(div);
+            div.classList.add('show');
+        }
+    }
+
+    // CompletableFuture demo
+    async function demonstrateCompletableFuture() {
+        const container = document.getElementById('completable-timeline');
+        container.innerHTML = '';
+
+        const steps = [
+            { text: '📌 CompletableFuture.supplyAsync() called', delay: 0 },
+            { text: '⚡ Returns immediately - main thread FREE!', delay: 300 },
+            { text: '💼 Main thread: "Doing other work..."', delay: 600 },
+            { text: '⚙️ Background: Task working...', delay: 900 },
+            { text: '💼 Main thread: "Still doing work..."', delay: 1200 },
+            { text: '⚙️ Background: Still processing...', delay: 1500 },
+            { text: '💼 Main thread continues executing', delay: 1800 },
+            { text: '✅ Background: Task completed!', delay: 2100 },
+            { text: '🔔 Callback (thenAccept) automatically triggered', delay: 2300 },
+            { text: '✨ Advantage: Main thread stayed productive!', delay: 2600 },
+        ];
+
+        for (const step of steps) {
+            await sleep(step.delay);
+            const div = document.createElement('div');
+            div.className = 'timeline-item';
+            div.textContent = step.text;
+            container.appendChild(div);
+            div.classList.add('show');
+        }
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+</script>
+</body>
+</html>
