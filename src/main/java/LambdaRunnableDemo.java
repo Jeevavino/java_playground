@@ -10,8 +10,11 @@ public class LambdaRunnableDemo {
         });
         newThread.start();
 
-        Thread lambda = new Thread(() -> System.out.println("hello"));
-
     }
+}
+
+class Task implements Runnable {
+    public void run(){}
+
 }
 
